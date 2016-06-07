@@ -3454,7 +3454,7 @@ uint32_t CBNET :: IsLevel( string name )
 
 string CBNET :: GetLevelName( uint32_t level )
 {
-    if( level < 0 || level > 10 )
+    if( level < 0 || level > 11 )
         return m_OHBot->m_Ranks[level];
     else
         return m_OHBot->m_Language->Unknown();
