@@ -2070,22 +2070,22 @@ void CBNET :: BotCommand(string Message, string User, bool Whisper, bool ForceRo
                     SS >> MaximumGames;
 
                     if( SS.fail( ) || MaximumGames == 0 )
-                        CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #1 to the autohost command" );
+                        CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #1 (MaximumGames) to the autohost command" );
                     else
                     {
                         SS >> AutoStartPlayers;
 
                         if( SS.fail( ) || AutoStartPlayers == 0 )
-                            CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #2 to the autohost command" );
+                            CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #2 (AutoStartPlayers) to the autohost command" );
                         else
                         {
                             SS >> GameType;
                             if( SS.fail( ) || GameType < 3 || GameType > 5 )
-                                CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #3 to the autohost command" );
+                                CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #3 (GameType) to the autohost command" );
                             else
                             {
                                 if( SS.eof( ) )
-                                    CONSOLE_Print( "[BNET: " + m_ServerAlias + "] missing input #4 to the autohost command" );
+                                    CONSOLE_Print( "[BNET: " + m_ServerAlias + "] missing input #4 (GameName) to the autohost command" );
                                 else
                                 {
                                     getline( SS, GameName );
@@ -2160,34 +2160,34 @@ void CBNET :: BotCommand(string Message, string User, bool Whisper, bool ForceRo
                     SS >> MaximumGames;
 
                     if( SS.fail( ) || MaximumGames == 0 )
-                        CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #1 to the autohostmm command" );
+                        CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #1 (MaximumGames) to the autohostmm command" );
                     else
                     {
                         SS >> AutoStartPlayers;
 
                         if( SS.fail( ) || AutoStartPlayers == 0 )
-                            CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #2 to the autohostmm command" );
+                            CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #2 (AutoStartPlayers) to the autohostmm command" );
                         else
                         {
                             SS >> GameType;
-                            if( SS.fail( ) || AutoStartPlayers == 0 )
-                                CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #2 to the autohostmm command" );
+                            if( SS.fail( ) || GameType < 3 || GameType > 5 )
+                                CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #3 (GameType) to the autohostmm command" );
                             else
                             {
                                 SS >> MinimumScore;
 
                                 if( SS.fail( ) )
-                                    CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #3 to the autohostmm command" );
+                                    CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #4 (MinimumScore) to the autohostmm command" );
                                 else
                                 {
                                     SS >> MaximumScore;
 
                                     if( SS.fail( ) )
-                                        CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #4 to the autohostmm command" );
+                                        CONSOLE_Print( "[BNET: " + m_ServerAlias + "] bad input #5 (MaximumScore) to the autohostmm command" );
                                     else
                                     {
                                         if( SS.eof( ) )
-                                            CONSOLE_Print( "[BNET: " + m_ServerAlias + "] missing input #5 to the autohostmm command" );
+                                            CONSOLE_Print( "[BNET: " + m_ServerAlias + "] missing input #6 (GameName) to the autohostmm command" );
                                         else
                                         {
                                             getline( SS, GameName );
