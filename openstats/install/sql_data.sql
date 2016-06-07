@@ -590,6 +590,7 @@ CREATE TABLE IF NOT EXISTS `oh_users` (
   `password_hash` varchar(65) NOT NULL,
   `user_ppwd` varchar(20) NOT NULL,
   `user_email` varchar(60) NOT NULL,
+  `user_color` varchar(6) NOT NULL DEFAULT 'FFFFFF',
   `user_joined` int(11) unsigned NOT NULL DEFAULT '0',
   `user_level` tinyint(1) unsigned NOT NULL,
   `user_custom_permission` varchar(10) NOT NULL DEFAULT '0000000000',
