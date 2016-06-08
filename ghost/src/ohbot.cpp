@@ -1919,8 +1919,11 @@ void COHBot :: LoadRanks( )
         CONSOLE_Print("[CONFIG] warning - ranks.txt doesn't contain enough levelnames. You require at least 11 rank names (Level 0 - Level 10, with 0).");
         m_RanksLoaded = false;
     } else if(m_RanksLoaded) {
-	CONSOLE_Print("[GHOST] loading file [ranks.txt]");
+		CONSOLE_Print("[GHOST] loading file [ranks.txt]");
     }
+	
+	// DEBUG m_Ranks @TODO remove
+	CONSOLE_Print("[DEBUG] Rank[0]: " + CBNET::join(m_Ranks,","));
 }
 
 void COHBot :: LoadInsult()

@@ -284,6 +284,7 @@ public:
     void Hack_Print( string message );
 
 	static void RegisterPythonClass( );
+	static string join(const vector<string>& vec, const char* delim);
 };
 
 #endif

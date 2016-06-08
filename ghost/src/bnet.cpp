@@ -2667,6 +2667,39 @@ void CBNET :: BotCommand(string Message, string User, bool Whisper, bool ForceRo
                 }
             }
         }
+        //
+        // !PUB host a single public game
+        //
+
+        else if( Command == "pub" &&! m_OHBot->m_ChannelBotOnly )
+        {
+            if( IsLevel( User ) == 10 || ForceRoot )
+            {
+
+                    // extract the game name
+                    // e.g. game name: "BattleShips Pro"
+
+                    string GameName;
+                    stringstream SS;
+                    SS << Payload;
+
+                     if( SS.eof( ) )
+                         CONSOLE_Print( "[BNET: " + m_ServerAlias + "] missing input #1 (GameName) to the pub command" );
+                    else
+                    {
+                        getline( SS, GameName );
+                        string :: size_type Start = GameName.find_first_not_of( " " );
+
+                        if( Start != string :: npos )
+                            GameName = GameName.substr( Start );
+
+                        // QueueChatCommand( m_OHBot->m_Language->AutoHostEnabled( ), User, Whisper );
+						m_OHBot->CreateGame( m_OHBot->m_Map, GAME_PUBLIC, false, GameName, User, User, m_Server, 1, Whisper, 1 );
+                    }
+            }
+            else
+                QueueChatCommand( m_OHBot->m_Language->YouDontHaveAccessToThatCommand( ), User, Whisper );
+        }
 
         //
         // !VIP Reg Needed
@@ -3583,4 +3616,18 @@ void CBNET :: PVPGNCommand( string Command )
     else if(cmd=="abort"||cmd=="a") {}
     else if(cmd=="pub") {} // host? or chost?
     else if(cmd=="priv") {}
+}
+
+
+//
+//  DEBUG Function to test string vetor content e.g. console_print Ranks because they are not loaded as expected
+//
+
+string CBNET :: join(const vector<string>& vec, const char* delim)
+{
+    string s="";
+	for (int i = 0; i < vec.size(); i++)   //doc is the vector
+		s += delim + vec[i];
+		
+	return s;
 }
