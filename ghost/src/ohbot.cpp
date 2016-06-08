@@ -1906,6 +1906,8 @@ void COHBot :: LoadRanks( )
             else
                 m_Ranks.push_back(Line);
             ++Count;
+            // @TODO remove DEBUG OUTPUT
+            cout << "[DEBUG] Rank(" << Count << "): " << Line << endl;
         }
         in.close( );
     }
@@ -1922,8 +1924,8 @@ void COHBot :: LoadRanks( )
 		CONSOLE_Print("[GHOST] loading file [ranks.txt]");
     }
 	
-	// DEBUG m_Ranks @TODO remove
-	CONSOLE_Print("[DEBUG] Rank[0]: " + CBNET::join(m_Ranks,","));
+	// @TODO remove DEBUG OUTPUT
+    cout << "[DEBUG] Ranks: " << CBNET::join(m_Ranks,",") << endl;
 }
 
 void COHBot :: LoadInsult()

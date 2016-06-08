@@ -4523,7 +4523,7 @@ void CBaseGame :: EventGameLoaded( )
 unsigned char CBaseGame :: GetSIDFromPID( unsigned char PID )
 {
     if( m_Slots.size( ) > 255 )
-        return 255;
+        return SLOT_UNKNOWN;
 
     for( unsigned char i = 0; i < m_Slots.size( ); ++i )
     {
@@ -4531,7 +4531,7 @@ unsigned char CBaseGame :: GetSIDFromPID( unsigned char PID )
             return i;
     }
 
-    return 255;
+    return SLOT_UNKNOWN;
 }
 
 CGamePlayer *CBaseGame :: GetPlayerFromPID( unsigned char PID )

@@ -38,6 +38,10 @@
 #define SLOTCOMP_NORMAL		1
 #define SLOTCOMP_HARD		2
 
+#define SLOTTEAM_OBSERVER   12
+
+#define SLOT_UNKNOWN        255
+
 //
 // CGameSlot
 //
