@@ -21,9 +21,9 @@
 */
 
 #include "ohbot.h"
-#include "util.h"
-#include "crc32.h"
-#include "sha1.h"
+#include "utils/util.h"
+#include "utils/crc32.h"
+#include "utils/sha1.h"
 #include "config.h"
 #include "map.h"
 

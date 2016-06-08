@@ -47,8 +47,9 @@ if ( isset($_SESSION["restricted"])) {
 	  
 	  $command = "!say /w $chatWith [".$_SESSION["username"]."]: $message ";
 	  if ( strlen($message)>=2 ) {
-	    $db->insert( OSDB_COMMANDS, array(
+	    $db->insert( OSDB_COMMANDS_QUEUE, array(
 	     "botid" => 1,
+		 "userid" => $_SESSION["user_id"],
 	     "command" => $command
         ));
 		

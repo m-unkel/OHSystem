@@ -45,7 +45,7 @@ define('OSDB_ADMINS',   'oh_admins'); //do not change
 define('OSDB_APPEALS',  'oh_ban_appeals');
 define('OSDB_REPORTS',  'oh_ban_reports');
 define('OSDB_BANS',     'oh_bans'); //do not change
-define('OSDB_COMMANDS', 'oh_commands'); //do not change
+define('OSDB_COMMANDS_QUEUE', 'oh_commands_queue'); //do not change
 define('OSDB_COMMENTS', 'oh_comments');
 define('OSDB_CUSTOM_FIELDS',  'oh_custom_fields');
 define('OSDB_DG',       'oh_dotagames'); //do not change

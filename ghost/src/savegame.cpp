@@ -21,8 +21,8 @@
 */
 
 #include "ohbot.h"
-#include "util.h"
-#include "packed.h"
+#include "utils/util.h"
+#include "utils/packed.h"
 #include "savegame.h"
 
 //

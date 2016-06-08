@@ -22,7 +22,7 @@
 #ifndef SAVEGAME_H
 #define SAVEGAME_H
 
-#include "gameslot.h"
+#include "game/gameslot.h"
 
 //
 // CSaveGame

@@ -1,27 +1,34 @@
 /**
-* Copyright [2013-2014] [OHsystem]
-*
-* We spent a lot of time writing this code, so show some respect:
-* - Do not remove this copyright notice anywhere (bot, website etc.)
-* - We do not provide support to those who removed copyright notice
-*
-* OHSystem is free software: You can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* You can contact the developers on: admin@ohsystem.net
-* or join us directly here: http://forum.ohsystem.net/
-*
-* Visit us also on http://ohsystem.net/ and keep track always of the latest
-* features and changes.
-*
-*
-* This is modified from GHOST++: http://ohbotplusplus.googlecode.com/
-*/
+ * Copyright [2016] [m-unkel]
+ * Mail: info@unive.de
+ * URL: https://github.com/m-unkel/OHSystem
+ *
+ * This is modified from OHSYSTEM https://github.com/OHSystem
+ *
+ * Copyright [2013-2014] [OHsystem]
+ *
+ * We spent a lot of time writing this code, so show some respect:
+ * - Do not remove this copyright notice anywhere (bot, website etc.)
+ * - We do not provide support to those who removed copyright notice
+ *
+ * OHSystem is free software: You can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * You can contact the developers on: admin@ohsystem.net
+ * or join us directly here: http://forum.ohsystem.net/
+ *
+ * Visit us also on http://ohsystem.net/ and keep track always of the latest
+ * features and changes.
+ *
+ *
+ * This is modified from GHOST++: http://ohbotplusplus.googlecode.com/
+ *
+ */
 
 #include "ohbot.h"
-#include "util.h"
+#include "utils/util.h"
 #include "config.h"
 #include "language.h"
 
@@ -1885,6 +1892,11 @@ string CLanguage :: InvalidNameTooShort( )
 string CLanguage :: NoPermissionToExecCommand( )
 {
     string Out = m_CFG->GetString( "oh_037", "oh_037" );
+    return Out;
+}
+
+string CLanguage ::CommandUsageInfo(string command) {
+    string Out = m_CFG->GetString( "usage_" + command , "Usage: !" + command + " ( usage_" + command + ")" );
     return Out;
 }
 

@@ -23,7 +23,7 @@
 #ifndef REPLAY_H
 #define REPLAY_H
 
-#include "gameslot.h"
+#include "game/gameslot.h"
 
 //
 // CReplay

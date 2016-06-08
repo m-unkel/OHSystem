@@ -487,8 +487,9 @@
 
 	$InsertID = -1;
 	
-	if (!empty($command) ) { $db->insert( OSDB_COMMANDS, array(
+	if (!empty($command) ) { $db->insert( OSDB_COMMANDS_QUEUE, array(
 	"botid" => $botID,
+	"userid" => $_SESSION["user_id"],
 	"command" => $command 
      )); 
 	 $InsertID = $db->lastInsertId();
@@ -519,8 +520,9 @@
 	
 	$InsertID = -1;
 	
-	if (!empty($com) ) { $db->insert( OSDB_COMMANDS, array(
+	if (!empty($com) ) { $db->insert( OSDB_COMMANDS_QUEUE, array(
 	"botid" => $botID,
+	"userid" => $_SESSION["user_id"],
 	"command" => $command 
      )); 
 	 $InsertID = $db->lastInsertId();

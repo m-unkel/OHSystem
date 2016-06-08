@@ -46,7 +46,7 @@ if ( isset($_GET["optimize_tables"]) ) {
   `".OSDB_DG."`,        `".OSDB_DP."`,            `".OSDB_DL."`,       `".OSDB_GP."`, 
   `".OSDB_GAMES."`,     `".OSDB_HEROES."`,        `".OSDB_ITEMS."`,    `".OSDB_NEWS."`, 
   `".OSDB_NOTES."`,     `".OSDB_STATS."`,         `".OSDB_USERS."`,    `".OSDB_CUSTOM_FIELDS."`,
-  `".OSDB_GUIDES."`,    `".OSDB_GAMELOG."`,       `".OSDB_COMMANDS."`. `".OSDB_GAMESTATUS."`,
+  `".OSDB_GUIDES."`,    `".OSDB_GAMELOG."`,       `".OSDB_COMMANDS_QUEUE."`. `".OSDB_GAMESTATUS."`,
   `".OSDB_GAME_INFO."`, `".OSDB_BNET_PM."`,       `".OSDB_ADMIN_LOG."`, `".OSDB_GO."`,
   `".OSDB_ALIASES."`,   `".OSDB_GOALS."`,         `".OSDB_LG_LOGS."` ,  `".OSDB_GPROXY."`                 ");
    $result = $opt->execute();

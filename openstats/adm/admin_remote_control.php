@@ -16,7 +16,7 @@ if (is_logged() AND isset($_SESSION["level"] ) AND $_SESSION["level"]<=9 ) {
 } else {
 
    if ( isset($_GET["clear_messages"]) ) {
-    $sth = $db->prepare( "TRUNCATE TABLE ".OSDB_COMMANDS.""  );
+    $sth = $db->prepare( "TRUNCATE TABLE ".OSDB_COMMANDS_QUEUE.""  );
     $result = $sth->execute();
 	?>
     <div align="center">
@@ -30,8 +30,9 @@ if (is_logged() AND isset($_SESSION["level"] ) AND $_SESSION["level"]<=9 ) {
  if ( isset($_POST["rc"]) AND isset($_POST["botid"]) AND is_numeric($_POST["botid"]) AND isset($_POST["command"]) ) {
     $botid = safeEscape( (int) $_POST["botid"] );
 	$command = strip_tags( (trim( $_POST["command"] ) ) );
-	$db->insert( OSDB_COMMANDS, array(
+	$db->insert( OSDB_COMMANDS_QUEUE, array(
 	"botid" => $botid,
+	"userid" => $_SESSION["user_id"],
 	"command" => $command
      ));
 	 

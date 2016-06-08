@@ -115,11 +115,23 @@ CREATE TABLE IF NOT EXISTS `oh_bot_configuration` (
   KEY `cfg_name` (`cfg_name`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `oh_commands`;
-CREATE TABLE IF NOT EXISTS `oh_commands` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+DROP TABLE IF EXISTS `oh_commands_log`;
+CREATE TABLE IF NOT EXISTS `oh_commands_log` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `botid` tinyint(2) unsigned DEFAULT NULL,
+  `userid` int(10) UNSIGNED DEFAULT NULL,
   `command` varchar(1024) DEFAULT NULL,
+  `executed` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `oh_commands_queue`;
+CREATE TABLE IF NOT EXISTS `oh_commands_queue` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `botid` tinyint(2) unsigned DEFAULT NULL,
+  `userid` int(10) UNSIGNED DEFAULT NULL,
+  `command` varchar(1024) DEFAULT NULL,
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 

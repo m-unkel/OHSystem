@@ -21,10 +21,10 @@
 */
 
 #include "ohbot.h"
-#include "util.h"
-#include "packed.h"
+#include "utils/util.h"
+#include "utils/packed.h"
 #include "replay.h"
-#include "gameprotocol.h"
+#include "game/gameprotocol.h"
 
 //
 // CReplay

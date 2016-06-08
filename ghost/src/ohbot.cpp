@@ -1,50 +1,57 @@
 /**
-* Copyright [2013-2014] [OHsystem]
-*
-* We spent a lot of time writing this code, so show some respect:
-* - Do not remove this copyright notice anywhere (bot, website etc.)
-* - We do not provide support to those who removed copyright notice
-*
-* OHSystem is free software: You can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* You can contact the developers on: admin@ohsystem.net
-* or join us directly here: http://forum.ohsystem.net/
-*
-* Visit us also on http://ohsystem.net/ and keep track always of the latest
-* features and changes.
-*
-*
-* This is modified from GHOST++: http://ohbotplusplus.googlecode.com/
-*/
+ * Copyright [2016] [m-unkel]
+ * Mail: info@unive.de
+ * URL: https://github.com/m-unkel/OHSystem
+ *
+ * This is modified from OHSYSTEM https://github.com/OHSystem
+ *
+ * Copyright [2013-2014] [OHsystem]
+ *
+ * We spent a lot of time writing this code, so show some respect:
+ * - Do not remove this copyright notice anywhere (bot, website etc.)
+ * - We do not provide support to those who removed copyright notice
+ *
+ * OHSystem is free software: You can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * You can contact the developers on: admin@ohsystem.net
+ * or join us directly here: http://forum.ohsystem.net/
+ *
+ * Visit us also on http://ohsystem.net/ and keep track always of the latest
+ * features and changes.
+ *
+ *
+ * This is modified from GHOST++: http://ohbotplusplus.googlecode.com/
+ *
+ */
 
 #include "ohbot.h"
-#include "util.h"
-#include "crc32.h"
-#include "sha1.h"
+#include "utils/util.h"
+#include "utils/crc32.h"
+#include "utils/sha1.h"
 #include "config.h"
 #include "language.h"
-#include "socket.h"
-#include "ghostdb.h"
-#include "ghostdbmysql.h"
-#include "bnet.h"
+#include "network/socket.h"
+#include "database/ghostdb.h"
+#include "database/ghostdbmysql.h"
+#include "bnet/bnet.h"
 #include "map.h"
-#include "packed.h"
+#include "utils/packed.h"
 #include "replay.h"
 #include "savegame.h"
-#include "gameplayer.h"
-#include "gameprotocol.h"
-#include "gameprotocol.h"
-#include "gpsprotocol.h"
-#include "gcbiprotocol.h"
-#include "game_base.h"
-#include "game.h"
-#include "bnlsprotocol.h"
-#include "bnlsclient.h"
-#include "bnetprotocol.h"
-#include "bncsutilinterface.h"
+#include "game/gameplayer.h"
+#include "game/gameprotocol.h"
+#include "game/gameprotocol.h"
+#include "network/gpsprotocol.h"
+#include "garena/gcbiprotocol.h"
+#include "game/game_base.h"
+#include "game/game.h"
+#include "bnls/bnlsprotocol.h"
+#include "bnls/bnlsclient.h"
+#include "bnet/bnetprotocol.h"
+#include "utils/bncsutilinterface.h"
 
 #include <signal.h>
 #include <stdlib.h>
@@ -1906,8 +1913,6 @@ void COHBot :: LoadRanks( )
             else
                 m_Ranks.push_back(Line);
             ++Count;
-            // @TODO remove DEBUG OUTPUT
-            cout << "[DEBUG] Rank(" << Count << "): " << Line << endl;
         }
         in.close( );
     }
@@ -1923,9 +1928,6 @@ void COHBot :: LoadRanks( )
     } else if(m_RanksLoaded) {
 		CONSOLE_Print("[GHOST] loading file [ranks.txt]");
     }
-	
-	// @TODO remove DEBUG OUTPUT
-    cout << "[DEBUG] Ranks: " << CBNET::join(m_Ranks,",") << endl;
 }
 
 void COHBot :: LoadInsult()
