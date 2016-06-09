@@ -39,7 +39,6 @@ public:
     string GetName();
     string GetUsage();
     bool isAllowed( unsigned char context, unsigned char level );
-    static void load( COHBot *nOHBot, COHBotDB *nOHBotDB);
 };
 
 #endif //COMMAND_H

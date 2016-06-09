@@ -31,6 +31,9 @@ std::vector<std::string> split(const std::string &s, char delim) {
 }
 
 
+//
+// Command Constructor
+//
 CCommand :: CCommand(COHBot *nOHBot, string nNameList, unsigned char nAclLevel, unsigned char nNumArguments, unsigned char nContext):
                             m_OHBot(nOHBot), m_AclLevel(nAclLevel), m_NumArguments(nNumArguments), m_Context(nContext) {
 
@@ -46,14 +49,30 @@ CCommand :: CCommand(COHBot *nOHBot, string nNameList, unsigned char nAclLevel, 
     }
 }
 
+//
+// Command Destructor
+//
+CCommand ::~CCommand() {
+
+}
+
+//
+// Get primary command name
+//
 string CCommand::GetName() {
     return m_Name;
 }
 
+//
+// Get usage info / how to use this command in case of wrong usage
+//
 string CCommand::GetUsage() {
     return m_OHBot->m_Language->CommandUsageInfo( m_Name );
 }
 
+//
+// Test if command can be used
+//
 bool CCommand::isAllowed(unsigned char context, unsigned char level) {
 
     // test if allowed context
@@ -66,8 +85,4 @@ bool CCommand::isAllowed(unsigned char context, unsigned char level) {
     }
 
     return false;
-}
-
-void CCommand :: load(COHBot *nOHBot, COHBotDB *nOHBotDB) {
-
 }

@@ -25,6 +25,12 @@
 
 #include "includes.h"
 
+#define MODE_LAN			0x1
+#define MODE_GARENA			0x2
+#define MODE_BNET			0x4
+#define MODE_GPROXY			0x8
+
+
 //
 // COHBot
 //
@@ -69,27 +75,37 @@ CConfig GetCFG( );
 class COHBot
 {
 public:
+
+	uint16_t m_RunMode;
+
+	// sockets and network protocols
     CUDPSocket *m_UDPSocket;				// a UDP socket for sending broadcasts and other junk (used with !sendlan)
     CUDPSocket *m_GarenaSocket;
     CTCPServer *m_ReconnectSocket;			// listening socket for GProxy++ reliable reconnects
     vector<CTCPSocket *> m_ReconnectSockets;// vector of sockets attempting to reconnect (connected but not identified yet)
     CGPSProtocol *m_GPSProtocol;
     CGCBIProtocol *m_GCBIProtocol;
-    CCRC32 *m_CRC;							// for calculating CRC's
-    CSHA1 *m_SHA;							// for calculating SHA1's
     vector<CBNET *> m_BNETs;				// all our battle.net connections (there can be more than one)
+	CCRC32 *m_CRC;							// for calculating CRC's
+	CSHA1 *m_SHA;							// for calculating SHA1's
+
+	// games and gamethreads
     CBaseGame *m_CurrentGame;				// this game is still in the lobby state
     vector<CBaseGame *> m_Games;			// these games are in progress
     boost::thread_group m_GameThreads;		// the threads for games in progress and stuff
     boost::mutex m_GamesMutex;
+
+	// database
     COHBotDB *m_DB;							// database
     COHBotDB *m_DBLocal;					// local database (for temporary data)
+
     vector<CBaseCallable *> m_Callables;	// vector of orphaned callables waiting to die
     boost::mutex m_CallablesMutex;
     vector<BYTEARRAY> m_LocalAddresses;		// vector of local IP addresses
     CLanguage *m_Language;					// language
     vector<translationTree> m_LanguageBundle;
     string LanCFGPath;
+
     CMap *m_Map;							// the currently loaded map
     CMap *m_AdminMap;						// the map to use in the admin game
     CMap *m_AutoHostMap;					// the map to use when autohosting
@@ -98,6 +114,7 @@ public:
     bool m_Exiting;							// set to true to force ohbot to shutdown next update (used by SignalCatcher)
     bool m_ExitingNice;						// set to true to force ohbot to disconnect from all battle.net connections and wait for all games to finish before shutting down
     bool m_Enabled;							// set to false to prevent new games from being created
+
     string m_Version;						// GHost++ version string
     uint32_t m_HostCounter;					// the current host counter (a unique number to identify a game, incremented each time a game is created)
     string m_AutoHostGameName;				// the base game name to auto host with
@@ -111,7 +128,6 @@ public:
     uint32_t m_MinLimit;
     bool m_ObserverFake;
     uint32_t m_MinFF;
-    bool m_NoGarena;
     bool m_CheckIPRange;
     bool m_DenieProxy;
     bool m_LiveGames;
@@ -145,16 +161,16 @@ public:
     CCallableGameDBInit *m_CallableHC;
     CCallableDeniedNamesList *m_CallableDeniedNamesList;
     vector<string> m_DeniedNamePartials;
+
+
     double m_AutoHostMinimumScore;
     double m_AutoHostMaximumScore;
     bool m_AllGamesFinished;				// if all games finished (used when exiting nicely)
     uint32_t m_AllGamesFinishedTime;		// GetTime when all games finished (used when exiting nicely)
-    string m_LanguageFile;					// config value: language file
     string m_Warcraft3Path;					// config value: Warcraft 3 path
     bool m_TFT;								// config value: TFT enabled or not
     string m_BindAddress;					// config value: the address to host games on
     uint16_t m_HostPort;					// config value: the port to host games on
-    bool m_Reconnect;						// config value: GProxy++ reliable reconnects enabled or not
     uint16_t m_ReconnectPort;				// config value: the port to listen for GProxy++ reliable reconnects on
     uint32_t m_ReconnectWaitTime;			// config value: the maximum number of minutes to wait for a GProxy++ reliable reconnect
     uint32_t m_MaxGames;					// config value: maximum number of games in progress
@@ -270,7 +286,7 @@ public:
     string m_SharedFilesPath;
     vector<cachedPlayer> m_PlayerCache;
     uint32_t m_BroadCastPort;
-    string m_LanCFGPath;
+    string m_LanguagesPath;
     uint32_t m_FallBackLanguage;
     bool isCreated;
     uint32_t m_StartTicks;
@@ -285,8 +301,6 @@ public:
     uint32_t m_DelayGameLoaded;
     bool m_FountainFarmDetection;
     bool m_AutokickSpoofer;
-    bool m_ReadGlobalMySQL;
-    string m_GlobalMySQLPath;
     bool m_PVPGNMode;
     uint32_t m_AutoRehostTime;
     uint32_t m_DenyLimit;
@@ -320,6 +334,8 @@ public:
     void EventGameDeleted( CBaseGame *game );
 
     // other functions
+
+	bool HasMode( unsigned char mode );
 
     void ReloadConfigs( );
     void SetConfigs( CConfig *CFG );

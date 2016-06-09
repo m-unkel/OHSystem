@@ -2948,7 +2948,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 // !SENDLAN
                 //
 
-            else if (Command == "sendlan" && !Payload.empty() && !m_CountDownStarted && Level >= 9) {
+            else if (Command == "sendlan" && !Payload.empty() && !m_CountDownStarted && Level >= 9 && m_OHBot->HasMode(MODE_LAN)) {
                 // extract the ip and the port
                 // e.g. "1.2.3.4 6112" -> ip: "1.2.3.4", port: "6112"
 

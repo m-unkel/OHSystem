@@ -28,6 +28,7 @@
  */
 
 #include "ohbot.h"
+#include "network/utils.h"
 #include "utils/util.h"
 #include "utils/crc32.h"
 #include "utils/sha1.h"
@@ -44,7 +45,7 @@
 #include "game/gameplayer.h"
 #include "game/gameprotocol.h"
 #include "game/gameprotocol.h"
-#include "network/gpsprotocol.h"
+#include "gproxy/gpsprotocol.h"
 #include "garena/gcbiprotocol.h"
 #include "game/game_base.h"
 #include "game/game.h"
@@ -54,19 +55,9 @@
 #include "utils/bncsutilinterface.h"
 
 #include <signal.h>
-#include <stdlib.h>
-
-#ifdef WIN32
-#include <ws2tcpip.h>		// for WSAIoctl
-#endif
 
 #define __STORMLIB_SELF__
 #include <stormlib/StormLib.h>
-
-#ifdef WIN32
-#include <windows.h>
-#include <winsock.h>
-#endif
 
 #include <time.h>
 
@@ -256,37 +247,39 @@ int main( int argc, char **argv )
     srand( time( NULL ) );
 
     CONSOLE_Print("***************************************************************************************");
-    CONSOLE_Print("**                      WELCOME TO THE OHSYSTEM BOT V2                               **");
+    CONSOLE_Print("**                WELCOME TO BE4M.DE's REWORKED OHSYSTEM BOT V3                      **");
     CONSOLE_Print("**       PLEASE DO NOT REMOVE ANY COPYRIGHT NOTICE TO RESPECT THE PROJECT            **");
     CONSOLE_Print("**       ----------------------------------------------------------------            **");
     CONSOLE_Print("**        For any questions and required support use our git repository              **");
-    CONSOLE_Print("**                    https://github.com/OHSystem/OHSystem                           **");
-    CONSOLE_Print("***************************************************************************************");
-    CONSOLE_Print("");
-    CONSOLE_Print("***************************************************************************************");
-    CONSOLE_Print("**                             INITIALIZE GHOST MODULE                               **");
+    CONSOLE_Print("**                    https://github.com/m-unkel/OHSystem                            **");
     CONSOLE_Print("***************************************************************************************");
     CONSOLE_Print("");
 
-    gCFGFile = "ohbot.cfg";
-
-    if( argc > 1 && argv[1] )
-        gCFGFile = argv[1];
 
     // read config file
-
     CFG.Read( "default.cfg" );
+
+    // read overloaded config file
+    if( argc > 1 && argv[1] ) {
+        gCFGFile = argv[1];
+        CFG.Read( gCFGFile );
+    }
+    else {
+        gCFGFile = "";
+    }
+
     gLogFile = CFG.GetString( "bot_log", "ohbot_" + UTIL_ToString( GetTime( ) ) + ".log" );
     gLogMethod = CFG.GetInt( "bot_logmethod", 1 );
+
+    CONSOLE_Print( "[GHOST] starting up" );
 
     if( !gLogFile.empty( ) )
     {
         if( gLogMethod == 1 )
-        {
             // log method 1: open, append, and close the log for every message
             // this works well on Linux but poorly on Windows, particularly as the log file grows in size
             // the log file can be edited/moved/deleted while GHost++ is running
-        }
+            CONSOLE_Print( "[GHOST] using log method 1, logging is enabled and [" + gLogFile + "] will not be locked" );
         else if( gLogMethod == 2 )
         {
             // log method 2: open the log on startup, flush the log for every message, close the log on shutdown
@@ -294,17 +287,7 @@ int main( int argc, char **argv )
 
             gLog = new ofstream( );
             gLog->open( gLogFile.c_str( ), ios :: app );
-        }
-    }
 
-    CONSOLE_Print( "[GHOST] starting up" );
-
-    if( !gLogFile.empty( ) )
-    {
-        if( gLogMethod == 1 )
-            CONSOLE_Print( "[GHOST] using log method 1, logging is enabled and [" + gLogFile + "] will not be locked" );
-        else if( gLogMethod == 2 )
-        {
             if( gLog->fail( ) )
                 CONSOLE_Print( "[GHOST] using log method 2 but unable to open [" + gLogFile + "] for appending, logging is disabled" );
             else
@@ -315,13 +298,11 @@ int main( int argc, char **argv )
         CONSOLE_Print( "[GHOST] no log file specified, logging is disabled" );
 
     // catch SIGABRT and SIGINT
-
     // signal( SIGABRT, SignalCatcher );
     signal( SIGINT, SignalCatcher );
 
 #ifndef WIN32
     // disable SIGPIPE since some systems like OS X don't define MSG_NOSIGNAL
-
     signal( SIGPIPE, SIG_IGN );
 #endif
 
@@ -415,6 +396,14 @@ int main( int argc, char **argv )
         delete gLog;
     }
 
+    CONSOLE_Print("***************************************************************************************");
+    CONSOLE_Print("**             Bye Bye, BE4M.DE's REWORKED OHSYSTEM BOT exited nicely!               **");
+    CONSOLE_Print("**       ----------------------------------------------------------------            **");
+    CONSOLE_Print("**        For any questions and required support use our git repository              **");
+    CONSOLE_Print("**                    https://github.com/m-unkel/OHSystem                            **");
+    CONSOLE_Print("***************************************************************************************");
+    CONSOLE_Print("");
+
     return 0;
 }
 
@@ -424,18 +413,62 @@ int main( int argc, char **argv )
 
 COHBot :: COHBot( CConfig *CFG )
 {
-    m_UDPSocket = new CUDPSocket( );
-    m_GarenaSocket = new CUDPSocket( );
-    m_UDPSocket->SetBroadcastTarget( CFG->GetString( "udp_broadcasttarget", string( ) ) );
-    m_UDPSocket->SetDontRoute( CFG->GetInt( "udp_dontroute", 0 ) == 0 ? false : true );
-    m_GarenaSocket->SetBroadcastTarget( CFG->GetString( "garena_broadcasttarget", string( ) ) );
-    m_GarenaSocket->SetDontRoute( true );
-    m_ReconnectSocket = NULL;
-    m_GPSProtocol = new CGPSProtocol( );
-    m_GCBIProtocol = new CGCBIProtocol( );
+    m_RunMode = 0;
+
+    // enable lan mode ?
+    if ( CFG->GetInt("lan_mode", 0) ) {
+
+        m_RunMode |= MODE_LAN;
+
+        // lan broadcast socket
+        m_UDPSocket = new CUDPSocket( );
+        m_UDPSocket->SetBroadcastTarget( CFG->GetString( "udp_broadcasttarget", string( ) ) );
+        m_UDPSocket->SetDontRoute(CFG->GetInt("udp_dontroute", 0 ) != 0);
+
+    }
+
+    // enable garena mode ?
+    if ( CFG->GetInt("garena_mode", 0) ) {
+
+        m_RunMode |= MODE_GARENA;
+
+        // garena socket
+        m_GarenaSocket = new CUDPSocket( );
+        m_GarenaSocket->SetBroadcastTarget( CFG->GetString( "garena_broadcasttarget", string( ) ) );
+        m_GarenaSocket->SetDontRoute( true );
+
+        // garena protocol
+        m_GCBIProtocol = new CGCBIProtocol( );
+    }
+
+    // enable gproxy mode ?
+    if ( CFG->GetInt("gproxy_mode", 0) ) {
+
+        m_RunMode |= MODE_GPROXY;
+        m_ReconnectPort = dynamic_cast<uint16_t>( CFG->GetInt( "gproxy_port", 6114 ) );
+
+        // gproxy socket
+        m_ReconnectSocket = NULL;
+
+        // gpsprotocol
+        m_GPSProtocol = new CGPSProtocol( );
+    }
+
+
     m_CRC = new CCRC32( );
     m_CRC->Initialize( );
     m_SHA = new CSHA1( );
+
+    // database connection
+    CONSOLE_Print( "[GHOST] opening primary database" );
+    m_DB = new COHBotDBMySQL( CFG );
+
+    // get a list of local IP addresses
+    // this list is used elsewhere to determine if a player connecting to the bot is local or not
+    CONSOLE_Print( "[GHOST] attempting to find local IP addresses" );
+    GetLocalAddresses( &m_LocalAddresses );
+
+    // initialize vars
     m_CurrentGame = NULL;
     m_FinishedGames = 0;
     m_CallableFlameList = NULL;
@@ -447,89 +480,29 @@ COHBot :: COHBot( CConfig *CFG )
     m_CallableDeniedNamesList = NULL;
     m_CallableHC = NULL;
     m_CheckForFinishedGames = 0;
-    m_RanksLoaded = true;
+    m_RanksLoaded = false;
     m_ReservedHostCounter = 0;
     m_TicksCollectionTimer = GetTicks();
     m_TicksCollection = 0;
     m_MaxTicks = 0;
     m_MinTicks = -1;
     m_Sampler = 0;
-    string DBType = CFG->GetString( "db_type", "mysql" );
-    CONSOLE_Print( "[GHOST] opening primary database" );
 
-    m_DB = new COHBotDBMySQL( CFG );
-
-    // get a list of local IP addresses
-    // this list is used elsewhere to determine if a player connecting to the bot is local or not
-
-    CONSOLE_Print( "[GHOST] attempting to find local IP addresses" );
-
-#ifdef WIN32
-    // use a more reliable Windows specific method since the portable method doesn't always work properly on Windows
-    // code stolen from: http://tangentsoft.net/wskfaq/examples/getifaces.html
-
-    SOCKET sd = WSASocket( AF_INET, SOCK_DGRAM, 0, 0, 0, 0 );
-
-    if( sd == SOCKET_ERROR )
-        CONSOLE_Print( "[GHOST] error finding local IP addresses - failed to create socket (error code " + UTIL_ToString( WSAGetLastError( ) ) + ")" );
-    else
-    {
-        INTERFACE_INFO InterfaceList[20];
-        unsigned long nBytesReturned;
-
-        if( WSAIoctl( sd, SIO_GET_INTERFACE_LIST, 0, 0, &InterfaceList, sizeof(InterfaceList), &nBytesReturned, 0, 0 ) == SOCKET_ERROR )
-            CONSOLE_Print( "[GHOST] error finding local IP addresses - WSAIoctl failed (error code " + UTIL_ToString( WSAGetLastError( ) ) + ")" );
-        else
-        {
-            int nNumInterfaces = nBytesReturned / sizeof(INTERFACE_INFO);
-
-            for( int i = 0; i < nNumInterfaces; ++i )
-            {
-                sockaddr_in *pAddress;
-                pAddress = (sockaddr_in *)&(InterfaceList[i].iiAddress);
-                CONSOLE_Print( "[GHOST] local IP address #" + UTIL_ToString( i + 1 ) + " is [" + string( inet_ntoa( pAddress->sin_addr ) ) + "]" );
-                m_LocalAddresses.push_back( UTIL_CreateByteArray( (uint32_t)pAddress->sin_addr.s_addr, false ) );
-            }
-        }
-
-        closesocket( sd );
-    }
-#else
-    // use a portable method
-
-    char HostName[255];
-
-    if( gethostname( HostName, 255 ) == SOCKET_ERROR )
-        CONSOLE_Print( "[GHOST] error finding local IP addresses - failed to get local hostname" );
-    else
-    {
-        CONSOLE_Print( "[GHOST] local hostname is [" + string( HostName ) + "]" );
-        struct hostent *HostEnt = gethostbyname( HostName );
-
-        if( !HostEnt )
-            CONSOLE_Print( "[GHOST] error finding local IP addresses - gethostbyname failed" );
-        else
-        {
-            for( int i = 0; HostEnt->h_addr_list[i] != NULL; ++i )
-            {
-                struct in_addr Address;
-                memcpy( &Address, HostEnt->h_addr_list[i], sizeof(struct in_addr) );
-                CONSOLE_Print( "[GHOST] local IP address #" + UTIL_ToString( i + 1 ) + " is [" + string( inet_ntoa( Address ) ) + "]" );
-                m_LocalAddresses.push_back( UTIL_CreateByteArray( (uint32_t)Address.s_addr, false ) );
-            }
-        }
-    }
-#endif
     m_Language = NULL;
     isCreated = false;
     m_Exiting = false;
     m_ExitingNice = false;
     m_Enabled = true;
-    m_Version = "17.2";
+    m_Version = "0.8 (Ghost 17.1, OHSystem 2)";
+
     m_AutoHostMaximumGames = CFG->GetInt( "autohost_maxgames", 0 );
     m_AutoHostAutoStartPlayers = CFG->GetInt( "autohost_startplayers", 0 );
     m_AutoHostGameName = CFG->GetString( "autohost_gamename", string( ) );
     m_AutoHostOwner = CFG->GetString( "autohost_owner", string( ) );
+    m_AutoHostMatchMaking = false;
+    m_AutoHostMinimumScore = 0.0;
+    m_AutoHostMaximumScore = 0.0;
+
     m_LastAutoHostTime = GetTime( );
     m_LastCommandListTime = GetTime( );
     m_LastFlameListUpdate = 0;
@@ -539,22 +512,18 @@ COHBot :: COHBot( CConfig *CFG )
     m_LastDNListUpdate = 0;
     m_LastDCountryUpdate = 0;
     m_LastHCUpdate = GetTime();
-    m_AutoHostMatchMaking = false;
-    m_AutoHostMinimumScore = 0.0;
-    m_AutoHostMaximumScore = 0.0;
-    if( m_TFT )
-        CONSOLE_Print( "[GHOST] acting as Warcraft III: The Frozen Throne" );
-    else
-        CONSOLE_Print( "[GHOST] acting as Warcraft III: Reign of Chaos" );
+
+    m_Warcraft3Path = UTIL_AddPathSeperator( CFG->GetString( "bot_war3path", "C:\\Program Files\\Warcraft III\\" ) );
+
+    m_BindAddress = CFG->GetString( "bot_bindaddress", string( ) );
 
     m_HostPort = CFG->GetInt( "bot_hostport", 6112 );
-    m_Reconnect = CFG->GetInt( "bot_reconnect", 1 ) == 0 ? false : true;
-    m_ReconnectPort = CFG->GetInt( "bot_reconnectport", 6114 );
     m_DefaultMap = CFG->GetString( "bot_defaultmap", "map" );
     m_LANWar3Version = CFG->GetInt( "lan_war3version", 26 );
     m_ReplayWar3Version = CFG->GetInt( "replay_war3version", 26 );
     m_ReplayBuildNumber = CFG->GetInt( "replay_buildnumber", 6059 );
     m_GameIDReplays = CFG->GetInt( "bot_gameidreplays", 1 ) == 0 ? false : true;
+
     m_BotID = CFG->GetInt( "db_mysql_botid", 0 );
     
     SetConfigs( CFG );
@@ -594,7 +563,6 @@ COHBot :: COHBot( CConfig *CFG )
         string UserName = CFG->GetString( Prefix + "username", string( ) );
         string UserPassword = CFG->GetString( Prefix + "password", string( ) );
         string FirstChannel = CFG->GetString( Prefix + "firstchannel", "The Void" );
-        string RootAdmin = CFG->GetString( Prefix + "rootadmin", string( ) );
         string BNETCommandTrigger = CFG->GetString( Prefix + "commandtrigger", "!" );
 
         if( BNETCommandTrigger.empty( ) )
@@ -694,15 +662,27 @@ COHBot :: COHBot( CConfig *CFG )
 
 COHBot :: ~COHBot( )
 {
-    delete m_UDPSocket;
-    delete m_GarenaSocket;
-    delete m_ReconnectSocket;
+    // remove lan socket
+    if( m_RunMode & MODE_LAN)
+        delete m_UDPSocket;
 
-    for( vector<CTCPSocket *> :: iterator i = m_ReconnectSockets.begin( ); i != m_ReconnectSockets.end( ); ++i )
-        delete *i;
+    // remove garena socket and protocol
+    if( m_RunMode & MODE_GARENA) {
+        delete m_GarenaSocket;
+        delete m_GCBIProtocol;
+    }
 
-    delete m_GPSProtocol;
-    delete m_GCBIProtocol;
+    // remove gproxy socket and protocol
+    if( m_RunMode & MODE_GPROXY) {
+
+        for( vector<CTCPSocket *> :: iterator i = m_ReconnectSockets.begin( ); i != m_ReconnectSockets.end( ); ++i )
+            delete *i;
+
+        delete m_ReconnectSocket;
+        delete m_GPSProtocol;
+    }
+
+
     delete m_CRC;
     delete m_SHA;
 
@@ -710,7 +690,7 @@ COHBot :: ~COHBot( )
         delete *i;
 
     if( m_CurrentGame )
-	m_CurrentGame->doDelete();
+	    m_CurrentGame->doDelete();
 
     for( vector<CBaseGame *> :: iterator i = m_Games.begin( ); i != m_Games.end( ); ++i ) {
 	(*i)->doDelete();
@@ -840,7 +820,7 @@ bool COHBot :: Update( long usecBlock )
 
     // create the GProxy++ reconnect listener
 
-    if( m_Reconnect )
+    if( m_RunMode & MODE_GPROXY )
     {
         if( !m_ReconnectSocket )
         {
@@ -853,8 +833,7 @@ bool COHBot :: Update( long usecBlock )
                 CONSOLE_Print( "[GHOST] error listening for GProxy++ reconnects on port " + UTIL_ToString( m_ReconnectPort ) );
                 delete m_ReconnectSocket;
                 m_ReconnectSocket = NULL;
-
-                m_Reconnect = false;
+                m_RunMode ^= MODE_GPROXY;
             }
         }
         else if( m_ReconnectSocket->HasError( ) )
@@ -862,7 +841,7 @@ bool COHBot :: Update( long usecBlock )
             CONSOLE_Print( "[GHOST] GProxy++ reconnect listener error (" + m_ReconnectSocket->GetErrorString( ) + ")" );
             delete m_ReconnectSocket;
             m_ReconnectSocket = NULL;
-            m_Reconnect = false;
+            m_RunMode ^= MODE_GPROXY;
         }
     }
 
@@ -883,16 +862,17 @@ bool COHBot :: Update( long usecBlock )
 
     // 2. the GProxy++ reconnect socket(s)
 
-    if( m_Reconnect && m_ReconnectSocket )
-    {
-        m_ReconnectSocket->SetFD( &fd, &send_fd, &nfds );
-        ++NumFDs;
-    }
+    if( HasMode( MODE_GPROXY ) ) {
 
-    for( vector<CTCPSocket *> :: iterator i = m_ReconnectSockets.begin( ); i != m_ReconnectSockets.end( ); ++i )
-    {
-        (*i)->SetFD( &fd, &send_fd, &nfds );
-        ++NumFDs;
+        if (m_ReconnectSocket) {
+            m_ReconnectSocket->SetFD(&fd, &send_fd, &nfds);
+            ++NumFDs;
+        }
+
+        for (vector<CTCPSocket *>::iterator i = m_ReconnectSockets.begin(); i != m_ReconnectSockets.end(); ++i) {
+            (*i)->SetFD(&fd, &send_fd, &nfds);
+            ++NumFDs;
+        }
     }
 
     // before we call select we need to determine how long to block for
@@ -951,113 +931,106 @@ bool COHBot :: Update( long usecBlock )
 
     // update GProxy++ reliable reconnect sockets
 
-    if( m_Reconnect && m_ReconnectSocket )
-    {
-        CTCPSocket *NewSocket = m_ReconnectSocket->Accept( &fd );
+    if ( HasMode( MODE_GPROXY ) ) {
 
-        if( NewSocket )
-            m_ReconnectSockets.push_back( NewSocket );
-    }
+        if (m_ReconnectSocket) {
+            CTCPSocket *NewSocket = m_ReconnectSocket->Accept(&fd);
 
-    for( vector<CTCPSocket *> :: iterator i = m_ReconnectSockets.begin( ); i != m_ReconnectSockets.end( ); )
-    {
-        if( (*i)->HasError( ) || !(*i)->GetConnected( ) || GetTime( ) - (*i)->GetLastRecv( ) >= 10 )
-        {
-            delete *i;
-            i = m_ReconnectSockets.erase( i );
-            continue;
+            if (NewSocket)
+                m_ReconnectSockets.push_back(NewSocket);
         }
 
-        (*i)->DoRecv( &fd );
-        string *RecvBuffer = (*i)->GetBytes( );
-        BYTEARRAY Bytes = UTIL_CreateByteArray( (unsigned char *)RecvBuffer->c_str( ), RecvBuffer->size( ) );
+        for (vector<CTCPSocket *>::iterator i = m_ReconnectSockets.begin(); i != m_ReconnectSockets.end();) {
+            if ((*i)->HasError() || !(*i)->GetConnected() || GetTime() - (*i)->GetLastRecv() >= 10) {
+                delete *i;
+                i = m_ReconnectSockets.erase(i);
+                continue;
+            }
 
-        // a packet is at least 4 bytes
+            (*i)->DoRecv(&fd);
+            string *RecvBuffer = (*i)->GetBytes();
+            BYTEARRAY Bytes = UTIL_CreateByteArray((unsigned char *) RecvBuffer->c_str(), RecvBuffer->size());
 
-        if( Bytes.size( ) >= 4 )
-        {
-            if( Bytes[0] == GPS_HEADER_CONSTANT )
-            {
-                // bytes 2 and 3 contain the length of the packet
+            // a packet is at least 4 bytes
 
-                uint16_t Length = UTIL_ByteArrayToUInt16( Bytes, false, 2 );
+            if (Bytes.size() >= 4) {
+                if (Bytes[0] == GPS_HEADER_CONSTANT) {
+                    // bytes 2 and 3 contain the length of the packet
 
-                if( Length >= 4 )
-                {
-                    if( Bytes.size( ) >= Length )
-                    {
-                        if( Bytes[1] == CGPSProtocol :: GPS_RECONNECT && Length == 13 )
-                        {
-				GProxyReconnector *Reconnector = new GProxyReconnector;
-				Reconnector->PID = Bytes[4];
-				Reconnector->ReconnectKey = UTIL_ByteArrayToUInt32( Bytes, false, 5 );
-				Reconnector->LastPacket = UTIL_ByteArrayToUInt32( Bytes, false, 9 );
-				Reconnector->PostedTime = GetTicks( );
-				Reconnector->socket = (*i);
-							
-				// update the receive buffer
-				*RecvBuffer = RecvBuffer->substr( Length );
-				i = m_ReconnectSockets.erase( i );
-				// post in the reconnects buffer and wait to see if a game thread will pick it up
-				boost::mutex::scoped_lock lock( m_ReconnectMutex );
-				m_PendingReconnects.push_back( Reconnector );
-				lock.unlock();
-				continue;
-                        }
-                        else
-                        {
-                            (*i)->PutBytes( m_GPSProtocol->SEND_GPSS_REJECT( REJECTGPS_INVALID ) );
-                            (*i)->DoSend( &send_fd );
-                            delete *i;
-                            i = m_ReconnectSockets.erase( i );
-                            continue;
+                    uint16_t Length = UTIL_ByteArrayToUInt16(Bytes, false, 2);
+
+                    if (Length >= 4) {
+                        if (Bytes.size() >= Length) {
+                            if (Bytes[1] == CGPSProtocol::GPS_RECONNECT && Length == 13) {
+                                GProxyReconnector *Reconnector = new GProxyReconnector;
+                                Reconnector->PID = Bytes[4];
+                                Reconnector->ReconnectKey = UTIL_ByteArrayToUInt32(Bytes, false, 5);
+                                Reconnector->LastPacket = UTIL_ByteArrayToUInt32(Bytes, false, 9);
+                                Reconnector->PostedTime = GetTicks();
+                                Reconnector->socket = (*i);
+
+                                // update the receive buffer
+                                *RecvBuffer = RecvBuffer->substr(Length);
+                                i = m_ReconnectSockets.erase(i);
+                                // post in the reconnects buffer and wait to see if a game thread will pick it up
+                                boost::mutex::scoped_lock lock(m_ReconnectMutex);
+                                m_PendingReconnects.push_back(Reconnector);
+                                lock.unlock();
+                                continue;
+                            }
+                            else {
+                                (*i)->PutBytes(m_GPSProtocol->SEND_GPSS_REJECT(REJECTGPS_INVALID));
+                                (*i)->DoSend(&send_fd);
+                                delete *i;
+                                i = m_ReconnectSockets.erase(i);
+                                continue;
+                            }
                         }
                     }
+                    else {
+                        (*i)->PutBytes(m_GPSProtocol->SEND_GPSS_REJECT(REJECTGPS_INVALID));
+                        (*i)->DoSend(&send_fd);
+                        delete *i;
+                        i = m_ReconnectSockets.erase(i);
+                        continue;
+                    }
                 }
-                else
-                {
-                    (*i)->PutBytes( m_GPSProtocol->SEND_GPSS_REJECT( REJECTGPS_INVALID ) );
-                    (*i)->DoSend( &send_fd );
+                else {
+                    (*i)->PutBytes(m_GPSProtocol->SEND_GPSS_REJECT(REJECTGPS_INVALID));
+                    (*i)->DoSend(&send_fd);
                     delete *i;
-                    i = m_ReconnectSockets.erase( i );
+                    i = m_ReconnectSockets.erase(i);
                     continue;
                 }
             }
-            else
-            {
-                (*i)->PutBytes( m_GPSProtocol->SEND_GPSS_REJECT( REJECTGPS_INVALID ) );
-                (*i)->DoSend( &send_fd );
-                delete *i;
-                i = m_ReconnectSockets.erase( i );
-                continue;
-            }
+
+            (*i)->DoSend(&send_fd);
+            ++i;
         }
 
-        (*i)->DoSend( &send_fd );
-        ++i;
-    }
 
-	// delete any old pending reconnects that have not been handled by games
-	if( !m_PendingReconnects.empty( ) ) {
-		boost::mutex::scoped_lock lock( m_ReconnectMutex );
-	
-		for( vector<GProxyReconnector *> :: iterator i = m_PendingReconnects.begin( ); i != m_PendingReconnects.end( ); )
-		{
-			if( GetTicks( ) - (*i)->PostedTime > 1500 )
-			{
-				(*i)->socket->PutBytes( m_GPSProtocol->SEND_GPSS_REJECT( REJECTGPS_NOTFOUND ) );
-				(*i)->socket->DoSend( &send_fd );
-				delete (*i)->socket;
-				delete (*i);
-				i = m_PendingReconnects.erase( i );
-				continue;
-			}
-			
-			i++;
-		}
-	
-		lock.unlock();
-	}
+        // delete any old pending reconnects that have not been handled by games
+        if( !m_PendingReconnects.empty( ) ) {
+            boost::mutex::scoped_lock lock( m_ReconnectMutex );
+
+            for( vector<GProxyReconnector *> :: iterator i = m_PendingReconnects.begin( ); i != m_PendingReconnects.end( ); )
+            {
+                if( GetTicks( ) - (*i)->PostedTime > 1500 )
+                {
+                    (*i)->socket->PutBytes( m_GPSProtocol->SEND_GPSS_REJECT( REJECTGPS_NOTFOUND ) );
+                    (*i)->socket->DoSend( &send_fd );
+                    delete (*i)->socket;
+                    delete (*i);
+                    i = m_PendingReconnects.erase( i );
+                    continue;
+                }
+
+                i++;
+            }
+
+            lock.unlock();
+        }
+    } // HasMode ( GPROXY )
 
     // autohost
 
@@ -1383,11 +1356,18 @@ void COHBot :: EventGameDeleted( CBaseGame *game )
     }
 }
 
+bool COHBot :: HasMode( unsigned char mode ) {
+    return (m_RunMode & mode) != 0;
+}
+
 void COHBot :: ReloadConfigs( )
 {
     CConfig CFG;
     CFG.Read( "default.cfg" );
-    CFG.Read( gCFGFile );
+    // load extended botid config
+    if ( gCFGFile != "" ) {
+        CFG.Read(gCFGFile);
+    }
     SetConfigs( &CFG );
 }
 
@@ -1395,37 +1375,60 @@ void COHBot :: SetConfigs( CConfig *CFG )
 {
     // this doesn't set EVERY config value since that would potentially require reconfiguring the battle.net connections
     // it just set the easily reloadable values
-    m_LanCFGPath = UTIL_AddPathSeperator( CFG->GetString( "languages_path", "languages/" ) );
+    m_LanguagesPath = UTIL_AddPathSeperator( CFG->GetString( "languages_path", "languages/" ) );
     delete m_Language;
-    m_Language = new CLanguage( CFG->GetString( "bot_language", "en.cfg" )+m_LanguageFile );
-    m_Warcraft3Path = UTIL_AddPathSeperator( CFG->GetString( "bot_war3path", "C:\\Program Files\\Warcraft III\\" ) );
-    m_BindAddress = CFG->GetString( "bot_bindaddress", string( ) );
-    m_ReconnectWaitTime = CFG->GetInt( "bot_reconnectwaittime", 3 );
-    m_MaxGames = CFG->GetInt( "bot_maxgames", 5 );
-    string BotCommandTrigger = CFG->GetString( "bot_commandtrigger", "!" );
+    m_Language = new CLanguage( m_LanguagesPath + CFG->GetString( "bot_language", "en" ) + ".cfg" );
 
+    m_ReconnectWaitTime = CFG->GetInt( "gproxy_reconnectwaittime", 3 );
+
+    m_MaxGames = CFG->GetInt( "bot_maxgames", 5 );
+
+    // set command trigger
+    string BotCommandTrigger = CFG->GetString( "bot_commandtrigger", "!" );
     if( BotCommandTrigger.empty( ) )
         BotCommandTrigger = "!";
-
     m_CommandTrigger = BotCommandTrigger[0];
+
+    // folders
+    m_MapPath = UTIL_AddPathSeperator( CFG->GetString( "bot_mappath", string( ) ) );
     m_MapCFGPath = UTIL_AddPathSeperator( CFG->GetString( "bot_mapcfgpath", string( ) ) );
+    m_SaveGamePath = UTIL_AddPathSeperator( CFG->GetString( "bot_savegamepath", string( ) ) );
+    m_ReplayPath = UTIL_AddPathSeperator( CFG->GetString( "bot_replaypath", string( ) ) );
+    m_SaveReplays = CFG->GetInt( "bot_savereplays", 0 ) == 0 ? false : true;
+
+    // messages
+    m_MOTDFile = CFG->GetString( "bot_motdfile", "motd.txt" );
+    m_GameLoadedFile = CFG->GetString( "bot_gameloadedfile", "gameloaded.txt" );
+    m_GameOverFile = CFG->GetString( "bot_gameoverfile", "gameover.txt" );
+
+    // logging
     m_GameLogging = CFG->GetInt( "game_logging", 0 ) == 0 ? false : true;
     m_GameLoggingID = CFG->GetInt( "game_loggingid", 1 );
     m_GameLogFilePath = UTIL_AddPathSeperator( CFG->GetString( "game_logpath", string( ) ) );
-    m_ColoredNamePath = UTIL_AddPathSeperator( CFG->GetString( "oh_coloredname", string( ) ) );
-    m_SaveGamePath = UTIL_AddPathSeperator( CFG->GetString( "bot_savegamepath", string( ) ) );
-    m_MapPath = UTIL_AddPathSeperator( CFG->GetString( "bot_mappath", string( ) ) );
-    m_SaveReplays = CFG->GetInt( "bot_savereplays", 0 ) == 0 ? false : true;
-    m_ReplayPath = UTIL_AddPathSeperator( CFG->GetString( "bot_replaypath", string( ) ) );
-    m_VirtualHostName = CFG->GetString( "bot_virtualhostname", "|cFF4080C0GHost" );
+
     m_HideIPAddresses = CFG->GetInt( "bot_hideipaddresses", 0 ) == 0 ? false : true;
     m_CheckMultipleIPUsage = CFG->GetInt( "bot_checkmultipleipusage", 1 ) == 0 ? false : true;
 
+    // names
+    m_ColoredNamePath = UTIL_AddPathSeperator( CFG->GetString( "oh_coloredname", string( ) ) );
+    m_VirtualHostName = CFG->GetString( "bot_virtualhostname", "|cFF4080C0GHost" );
     if( m_VirtualHostName.size( ) > 15 )
     {
         m_VirtualHostName = "|cFF4080C0GHost";
         CONSOLE_Print( "[GHOST] warning - bot_virtualhostname is longer than 15 characters, using default virtual host name" );
     }
+
+    // ohsystem features
+    m_StatsUpdate = CFG->GetInt( "oh_general_updatestats", 0 ) == 0 ? false : true;
+    m_MessageSystem = CFG->GetInt("oh_general_messagesystem", 1 ) == 0 ? false : true;
+    m_FunCommands = CFG->GetInt("oh_general_funcommands", 1 ) == 0 ? false : true;
+    m_BetSystem = CFG->GetInt("oh_general_betsystem", 1 ) == 0 ? false : true;
+    m_AccountProtection = CFG->GetInt("oh_general_accountprotection", 1 ) == 0 ? false : true;
+    m_AutoDenyUsers = CFG->GetInt("oh_general_autodeny", 0) == 0 ? false : true;
+    m_BotManagerName = CFG->GetString( "oh_general_botmanagername", "PeaceMaker" );
+    m_Website = CFG->GetString("oh_general_domain", "https://wc3.be4m.de/" );
+    m_ChannelBotOnly = CFG->GetInt("oh_channelbot", 0) == 0 ? false : true;
+
 
     m_SpoofChecks = CFG->GetInt( "bot_spoofchecks", 2 );
     m_RequireSpoofChecks = CFG->GetInt( "bot_requirespoofchecks", 0 ) == 0 ? false : true;
@@ -1433,10 +1436,13 @@ void COHBot :: SetConfigs( CConfig *CFG )
     m_RefreshMessages = CFG->GetInt( "bot_refreshmessages", 0 ) == 0 ? false : true;
     m_AutoLock = CFG->GetInt( "bot_autolock", 0 ) == 0 ? false : true;
     m_AutoSave = CFG->GetInt( "bot_autosave", 0 ) == 0 ? false : true;
+
+    // downloads
     m_AllowDownloads = CFG->GetInt( "bot_allowdownloads", 0 );
     m_PingDuringDownloads = CFG->GetInt( "bot_pingduringdownloads", 0 ) == 0 ? false : true;
     m_MaxDownloaders = CFG->GetInt( "bot_maxdownloaders", 3 );
     m_MaxDownloadSpeed = CFG->GetInt( "bot_maxdownloadspeed", 100 );
+
     m_LCPings = CFG->GetInt( "bot_lcpings", 1 ) == 0 ? false : true;
     m_AutoKickPing = CFG->GetInt( "bot_autokickping", 400 );
     m_BanMethod = CFG->GetInt( "bot_banmethod", 1 );
@@ -1444,6 +1450,65 @@ void COHBot :: SetConfigs( CConfig *CFG )
     m_LobbyTimeLimit = CFG->GetInt( "bot_lobbytimelimit", 10 );
     m_Latency = CFG->GetInt( "bot_latency", 100 );
     m_SyncLimit = CFG->GetInt( "bot_synclimit", 50 );
+
+    m_LocalAdminMessages = CFG->GetInt( "bot_localadminmessages", 1 ) == 0 ? false : true;
+    m_TCPNoDelay = CFG->GetInt( "tcp_nodelay", 0 ) == 0 ? false : true;
+    m_MatchMakingMethod = CFG->GetInt( "bot_matchmakingmethod", 1 );
+    m_MapGameType = CFG->GetUInt( "bot_mapgametype", 0 );
+    m_AllGamesFinished = false;
+    m_AllGamesFinishedTime = 0;
+    m_MinVIPGames = CFG->GetInt( "vip_mingames", 25 );
+    m_RegVIPGames = CFG->GetInt( "vip_reg", 0 ) == 0 ? false : true;
+
+
+    m_TFT = CFG->GetInt( "bot_tft", 1 ) == 0 ? false : true;
+    if( m_TFT )
+        CONSOLE_Print( "[GHOST] acting as Warcraft III: The Frozen Throne" );
+    else
+        CONSOLE_Print( "[GHOST] acting as Warcraft III: Reign of Chaos" );
+
+
+    m_OHBalance = CFG->GetInt( "oh_balance", 1 ) == 0 ? false : true;
+    m_HighGame = CFG->GetInt( "oh_rankedgame", 0 ) == 0 ? false : true;
+    m_MinLimit = CFG->GetInt( "oh_mingames", 25 );
+    m_ObserverFake = CFG->GetInt( "oh_observer", 1 ) == 0 ? false : true;
+    m_CheckIPRange = CFG->GetInt( "oh_checkiprangeonjoin", 0 ) == 0 ? false : true;
+    m_DenieProxy = CFG->GetInt( "oh_proxykick", 0 ) == 0 ? false : true;
+    m_LiveGames = CFG->GetInt( "oh_general_livegames", 1 ) == 0 ? false : true;
+    m_MinFF = CFG->GetInt( "oh_minff", 20 );
+
+    // antifarm
+    m_MinimumLeaverKills = CFG->GetInt( "antifarm_minkills", 3 );
+    m_MinimumLeaverDeaths = CFG->GetInt( "antifarm_mindeaths", 3 );
+    m_MinimumLeaverAssists = CFG->GetInt( "antifarm_minassists", 3 );
+    m_DeathsByLeaverReduction =  CFG->GetInt( "antifarm_deathsbyleaver", 1 );
+
+    // autoend
+    m_MinPlayerAutoEnd = CFG->GetInt( "autoend_minplayer", 2 );
+    m_MaxAllowedSpread = CFG->GetInt( "autoend_maxspread", 2 );
+    m_EarlyEnd = CFG->GetInt( "autoend_earlyend", 1 ) == 0 ? false : true;
+    m_AutoEndTime = CFG->GetInt("autoend_votetime", 120);
+
+
+    m_Announce = CFG->GetInt("oh_announce", 0 ) == 0 ? false : true;
+    m_AnnounceHidden = CFG->GetInt("oh_hiddenAnnounce", 0 ) == 0 ? false : true;
+
+    m_FountainFarmWarning = CFG->GetInt("oh_fountainfarm_warning", 0 ) == 0 ? false : true;
+    m_FountainFarmMessage = CFG->GetString("oh_fountainfarm_message", "Reminder: Any kind of fountainfarming, or even an attempt, is bannable." );
+
+    m_AllowVoteStart = CFG->GetInt("oh_allowvotestart", 0) == 0 ? false : true;
+    m_VoteStartMinPlayers = CFG->GetInt("oh_votestartminimumplayers", 3);
+    m_AutoMuteSpammer = CFG->GetInt( "oh_mutespammer", 1 ) == 0 ? false : true;
+    m_FlameCheck = CFG->GetInt("oh_flamecheck", 0) == 0 ? false : true;
+    m_IngameVoteKick = CFG->GetInt("oh_ingamevotekick", 1) == 0 ? false : true;
+    m_LeaverAutoBanTime = CFG->GetInt("oh_leaverautobantime", 259200);
+    m_DisconnectAutoBanTime = CFG->GetInt("oh_disconnectautobantime", 86400);
+    m_FirstFlameBanTime = CFG->GetInt("oh_firstflamebantime", 172800 );
+    m_SecondFlameBanTime = CFG->GetInt("oh_secondflamebantime", 345600);
+    m_SpamBanTime = CFG->GetInt("oh_spambantime", 172800 );
+
+
+    // votes: kick
     m_VoteKickAllowed = CFG->GetInt( "bot_votekickallowed", 1 ) == 0 ? false : true;
     m_VoteKickPercentage = CFG->GetInt( "bot_votekickpercentage", 100 );
     if( m_VoteKickPercentage > 100 )
@@ -1451,71 +1516,24 @@ void COHBot :: SetConfigs( CConfig *CFG )
         m_VoteKickPercentage = 100;
         CONSOLE_Print( "[GHOST] warning - bot_votekickpercentage is greater than 100, using 100 instead" );
     }
-
-    m_MOTDFile = CFG->GetString( "bot_motdfile", "motd.txt" );
-    m_GameLoadedFile = CFG->GetString( "bot_gameloadedfile", "gameloaded.txt" );
-    m_GameOverFile = CFG->GetString( "bot_gameoverfile", "gameover.txt" );
-    m_LocalAdminMessages = CFG->GetInt( "bot_localadminmessages", 1 ) == 0 ? false : true;
-    m_TCPNoDelay = CFG->GetInt( "tcp_nodelay", 0 ) == 0 ? false : true;
-    m_MatchMakingMethod = CFG->GetInt( "bot_matchmakingmethod", 1 );
-    m_MapGameType = CFG->GetUInt( "bot_mapgametype", 0 );
-    m_AutoHostGameType = CFG->GetInt( "oh_autohosttype", 3 );
-    m_AllGamesFinished = false;
-    m_AllGamesFinishedTime = 0;
-    m_MinVIPGames = CFG->GetInt( "vip_mingames", 25 );
-    m_RegVIPGames = CFG->GetInt( "vip_reg", 0 ) == 0 ? false : true;
-    m_TFT = CFG->GetInt( "bot_tft", 1 ) == 0 ? false : true;
-    m_OHBalance = CFG->GetInt( "oh_balance", 1 ) == 0 ? false : true;
-    m_HighGame = CFG->GetInt( "oh_rankedgame", 0 ) == 0 ? false : true;
-    m_MinLimit = CFG->GetInt( "oh_mingames", 25 );
-    m_ObserverFake = CFG->GetInt( "oh_observer", 1 ) == 0 ? false : true;
-    m_NoGarena = CFG->GetInt( "oh_nogarena", 0 ) == 0 ? false : true;
-    m_CheckIPRange = CFG->GetInt( "oh_checkiprangeonjoin", 0 ) == 0 ? false : true;
-    m_DenieProxy = CFG->GetInt( "oh_proxykick", 0 ) == 0 ? false : true;
-    m_LiveGames = CFG->GetInt( "oh_general_livegames", 1 ) == 0 ? false : true;
-    m_MinFF = CFG->GetInt( "oh_minff", 20 );
-    m_MinimumLeaverKills = CFG->GetInt( "antifarm_minkills", 3 );
-    m_MinimumLeaverDeaths = CFG->GetInt( "antifarm_mindeaths", 3 );
-    m_MinimumLeaverAssists = CFG->GetInt( "antifarm_minassists", 3 );
-    m_DeathsByLeaverReduction =  CFG->GetInt( "antifarm_deathsbyleaver", 1 );
-    m_MinPlayerAutoEnd = CFG->GetInt( "autoend_minplayer", 2 );
-    m_MaxAllowedSpread = CFG->GetInt( "autoend_maxspread", 2 );
-    m_EarlyEnd = CFG->GetInt( "autoend_earlyend", 1 ) == 0 ? false : true;
-    m_StatsUpdate = CFG->GetInt( "oh_general_updatestats", 0 ) == 0 ? false : true;
-    m_MessageSystem = CFG->GetInt("oh_general_messagesystem", 1 ) == 0 ? false : true;
-    m_FunCommands = CFG->GetInt("oh_general_funcommands", 1 ) == 0 ? false : true;
-    m_BetSystem = CFG->GetInt("oh_general_betsystem", 1 ) == 0 ? false : true;
-    m_AccountProtection = CFG->GetInt("oh_general_accountprotection", 1 ) == 0 ? false : true;
-    m_Announce = CFG->GetInt("oh_announce", 0 ) == 0 ? false : true;
-    m_AnnounceHidden = CFG->GetInt("oh_hiddenAnnounce", 0 ) == 0 ? false : true;
-    m_FountainFarmWarning = CFG->GetInt("oh_fountainfarm_warning", 0 ) == 0 ? false : true;
-    m_FountainFarmMessage = CFG->GetString("oh_fountainfarm_message", "Reminder: Any kind of fountainfarming, or even an attempt, is bannable." );
-    m_AutoDenyUsers = CFG->GetInt("oh_general_autodeny", 0) == 0 ? false : true;
-    m_AllowVoteStart = CFG->GetInt("oh_allowvotestart", 0) == 0 ? false : true;
-    m_VoteStartMinPlayers = CFG->GetInt("oh_votestartminimumplayers", 3);
-    m_AutoMuteSpammer = CFG->GetInt( "oh_mutespammer", 1 ) == 0 ? false : true;
-    m_FlameCheck = CFG->GetInt("oh_flamecheck", 0) == 0 ? false : true;
-    m_BotManagerName = CFG->GetString( "oh_general_botmanagername", "PeaceMaker" );
-    m_IngameVoteKick = CFG->GetInt("oh_ingamevotekick", 1) == 0 ? false : true;
-    m_LeaverAutoBanTime = CFG->GetInt("oh_leaverautobantime", 259200);
-    m_DisconnectAutoBanTime = CFG->GetInt("oh_disconnectautobantime", 86400);
-    m_FirstFlameBanTime = CFG->GetInt("oh_firstflamebantime", 172800 );
-    m_SecondFlameBanTime = CFG->GetInt("oh_secondflamebantime", 345600);
-    m_SpamBanTime = CFG->GetInt("oh_spambantime", 172800 );
     m_VKAbuseBanTime = CFG->GetInt("oh_votekickabusebantime", 432000);
+
+    // votes: mute
     m_VoteMuting = CFG->GetInt("oh_votemute", 1) == 0 ? false : true;
     m_VoteMuteTime = CFG->GetInt("oh_votemutetime", 180);
-    m_AutoEndTime = CFG->GetInt("autoend_votetime", 120);
+
+    // votes: mode
+    m_VoteMode = CFG->GetInt( "oh_votemode", 0 ) == 0 ? false : true;
+    m_MaxVotingTime = CFG->GetInt( "oh_votemode_time", 30 );
+
+
     m_AllowHighPingSafeDrop = CFG->GetInt("oh_allowsafedrop", 1) == 0 ? false : true;
     m_MinPauseLevel = CFG->GetInt("oh_minpauselevel", 3);
     m_MinScoreLimit = CFG->GetInt("oh_minscorelimit", 0);
     m_MaxScoreLimit = CFG->GetInt("oh_maxscorelimit", 0);
     m_AutobanAll = CFG->GetInt("oh_autobanall", 1) == 0 ? false : true;
     m_WC3ConnectAlias = CFG->GetString("wc3connect_alias", "WC3Connect");
-    m_ChannelBotOnly = CFG->GetInt("oh_channelbot", 0) == 0 ? false : true;
     m_NonAllowedDonwloadMessage = CFG->GetString("oh_downloadmessage", string());
-    m_VoteMode = CFG->GetInt( "oh_votemode", 0 ) == 0 ? false : true;
-    m_MaxVotingTime = CFG->GetInt( "oh_votemode_time", 30 );
     m_RandomMode = CFG->GetInt( "oh_votemode_random", 0 ) == 0 ? false : true;
     m_HideMessages = CFG->GetInt( "oh_hideleavermessages", 1 ) == 0 ? false : true;
     m_DenieCountriesOnThisBot = CFG->GetInt( "oh_deniedcountries", 1 ) == 0 ? false : true;
@@ -1526,20 +1544,21 @@ void COHBot :: SetConfigs( CConfig *CFG )
     m_SimpleAFKScript = CFG->GetInt("oh_simpleafksystem", 1 ) == 0 ? false :  true;
     m_APMAllowedMinimum = CFG->GetInt("oh_apmallowedminimum", 20);
     m_APMMaxAfkWarnings = CFG->GetInt("oh_apmmaxafkwarnings", 5);
-    m_Website = CFG->GetString("oh_general_domain", "http://ohsystem.net/" );
     m_SharedFilesPath = UTIL_AddPathSeperator( CFG->GetString( "bot_sharedfilespath", string( ) ) );
     m_BroadCastPort = CFG->GetInt("oh_broadcastport", 6112 );
     m_SpoofPattern = CFG->GetString("oh_spoofpattern", string());
     m_DelayGameLoaded = CFG->GetInt("oh_delaygameloaded", 300);
     m_FountainFarmDetection = CFG->GetInt("oh_fountainfarmdetection", 1) == 0 ? false : true;
     m_AutokickSpoofer = CFG->GetInt("oh_autokickspoofer", 1) == 0 ? false : true;
-    m_ReadGlobalMySQL = CFG->GetInt("oh_readglobalmysql", 0) == 0 ? false : true;
-    m_GlobalMySQLPath = UTIL_AddPathSeperator( CFG->GetString( "oh_globalmysqlpath", "../" ) );
     m_PVPGNMode = CFG->GetInt("oh_pvpgn_mode", 0) == 0 ? false : true;
+
+    // AutoHost
+    m_AutoHostGameType = CFG->GetInt( "oh_autohosttype", 3 );
     m_AutoRehostTime = CFG->GetInt("oh_auto_rehost_time", 0);
     if(m_AutoRehostTime<10 && m_AutoRehostTime!=0) { 
 	m_AutoRehostTime=10; 
     }
+
     m_DenyLimit = CFG->GetInt("oh_cc_deny_limit", 2);
     m_SwapLimit = CFG->GetInt("oh_cc_swap_limit", 2);
     m_SendAutoStartInfo = CFG->GetInt("oh_sendautostartalert", 0) == 0 ? false : true;
@@ -1894,6 +1913,8 @@ uint32_t COHBot :: GetNewHostCounter( )
 }
 void COHBot :: LoadRanks( )
 {
+    m_RanksLoaded = true;
+
     string File = m_SharedFilesPath + "ranks.txt";
     ifstream in;
     in.open( File.c_str() );
@@ -2293,11 +2314,12 @@ void COHBot :: HandleRCONCommand( string incommingcommand ) {
 	
 }
 
+// @TODO remove or recover
 void COHBot :: LoadLanguages( ) {
     /*
     try
     {
-        path LanCFGPath( m_LanCFGPath );
+        path LanCFGPath( m_LanguagesPath );
 
         if( !exists( LanCFGPath ) )
         {

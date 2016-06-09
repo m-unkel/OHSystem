@@ -919,7 +919,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
         // see the !sendlan code later in this file for some more information about how this works
         // todotodo: should we send a game cancel message somewhere? we'll need to implement a host counter for it to work
 
-        if( !m_CountDownStarted )
+        if( !m_CountDownStarted && m_OHBot->HasMode( MODE_LAN | MODE_GARENA ))
         {
             // construct a fixed host counter which will be used to identify players from this "realm" (i.e. LAN)
             // the fixed host counter's 4 most significant bits will contain a 4 bit ID (0-15)
@@ -955,9 +955,17 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
                 BYTEARRAY MapHeight;
                 MapHeight.push_back( 0 );
                 MapHeight.push_back( 0 );
-                m_OHBot->m_UDPSocket->Broadcast( m_OHBot->m_BroadCastPort, m_Protocol->SEND_W3GS_GAMEINFO( m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray( MapGameType, false ), m_Map->GetMapGameFlags( ), MapWidth, MapHeight, m_GameName, m_OHBot->m_BotManagerName, GetTime( ) - GetCreationTime( ), "Save\\Multiplayer\\" + m_SaveGame->GetFileNameNoPath( ), m_SaveGame->GetMagicNumber( ), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey ) );
-                m_OHBot->m_UDPSocket->Broadcast( 1337, m_Protocol->SEND_W3GS_GAMEINFO( m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray( MapGameType, false ), m_Map->GetMapGameFlags( ), MapWidth, MapHeight, m_GameName, m_OHBot->m_BotManagerName, GetTime( ) - GetCreationTime( ), "Save\\Multiplayer\\" + m_SaveGame->GetFileNameNoPath( ), m_SaveGame->GetMagicNumber( ), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey ) );
-		 m_OHBot->m_GarenaSocket->Broadcast( m_OHBot->m_GarenaPort, m_Protocol->SEND_W3GS_GAMEINFO( m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray( MapGameType, false ), m_Map->GetMapGameFlags( ), MapWidth, MapHeight, m_GameName, m_OHBot->m_BotManagerName, GetTime( ) - GetCreationTime( ), "Save\\Multiplayer\\" + m_SaveGame->GetFileNameNoPath( ), m_SaveGame->GetMagicNumber( ), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey ) );
+
+                if( m_OHBot->HasMode( MODE_LAN )) {
+                    // @TODO why two different ports ?
+                    m_OHBot->m_UDPSocket->Broadcast( m_OHBot->m_BroadCastPort,
+                                                     m_Protocol->SEND_W3GS_GAMEINFO( m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray( MapGameType, false ), m_Map->GetMapGameFlags( ), MapWidth, MapHeight, m_GameName, m_OHBot->m_BotManagerName, GetTime( ) - GetCreationTime( ), "Save\\Multiplayer\\" + m_SaveGame->GetFileNameNoPath( ), m_SaveGame->GetMagicNumber( ), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey ) );
+                    m_OHBot->m_UDPSocket->Broadcast( 1337, m_Protocol->SEND_W3GS_GAMEINFO( m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray( MapGameType, false ), m_Map->GetMapGameFlags( ), MapWidth, MapHeight, m_GameName, m_OHBot->m_BotManagerName, GetTime( ) - GetCreationTime( ), "Save\\Multiplayer\\" + m_SaveGame->GetFileNameNoPath( ), m_SaveGame->GetMagicNumber( ), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey ) );
+                }
+
+                if( m_OHBot->HasMode( MODE_GARENA )) {
+                    m_OHBot->m_GarenaSocket->Broadcast( m_OHBot->m_GarenaPort, m_Protocol->SEND_W3GS_GAMEINFO( m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray( MapGameType, false ), m_Map->GetMapGameFlags( ), MapWidth, MapHeight, m_GameName, m_OHBot->m_BotManagerName, GetTime( ) - GetCreationTime( ), "Save\\Multiplayer\\" + m_SaveGame->GetFileNameNoPath( ), m_SaveGame->GetMagicNumber( ), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey ) );
+                }
             }
             else
             {
@@ -965,10 +973,27 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
                 // note: we do not use m_Map->GetMapGameType because none of the filters are set when broadcasting to LAN (also as you might expect)
 
                 uint32_t MapGameType = MAPGAMETYPE_UNKNOWN0;
-                m_OHBot->m_UDPSocket->Broadcast( m_OHBot->m_BroadCastPort, m_Protocol->SEND_W3GS_GAMEINFO( m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray( MapGameType, false ), m_Map->GetMapGameFlags( ), m_Map->GetMapWidth( ), m_Map->GetMapHeight( ), m_GameName, m_OHBot->m_BotManagerName, GetTime( ) - GetCreationTime( ), m_Map->GetMapPath( ), m_Map->GetMapCRC( ), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey ) );
-                m_OHBot->m_UDPSocket->Broadcast( 1337, m_Protocol->SEND_W3GS_GAMEINFO( m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray( MapGameType, false ), m_Map->GetMapGameFlags( ), m_Map->GetMapWidth( ), m_Map->GetMapHeight( ), m_GameName, m_OHBot->m_BotManagerName, GetTime( ) - GetCreationTime( ), m_Map->GetMapPath( ), m_Map->GetMapCRC( ), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey ) );
-		m_OHBot->m_GarenaSocket->Broadcast( m_OHBot->m_GarenaPort,  m_Protocol->SEND_W3GS_GAMEINFO( m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray( MapGameType, false ), m_Map->GetMapGameFlags( ), m_Map->GetMapWidth( ), m_Map->GetMapHeight( ), m_GameName, m_OHBot->m_BotManagerName, GetTime( ) - GetCreationTime( ), m_Map->GetMapPath( ), m_Map->GetMapCRC( ), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey ) );
-              }
+
+                if( m_OHBot->HasMode( MODE_LAN )) {
+                    m_OHBot->m_UDPSocket->Broadcast(m_OHBot->m_BroadCastPort,
+                                                    m_Protocol->SEND_W3GS_GAMEINFO(m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray(MapGameType, false),
+                                                                                   m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName,
+                                                                                   m_OHBot->m_BotManagerName, GetTime() - GetCreationTime(), m_Map->GetMapPath(),
+                                                                                   m_Map->GetMapCRC(), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey));
+                    m_OHBot->m_UDPSocket->Broadcast(1337, m_Protocol->SEND_W3GS_GAMEINFO(m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray(MapGameType, false),
+                                                                                         m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName,
+                                                                                         m_OHBot->m_BotManagerName, GetTime() - GetCreationTime(), m_Map->GetMapPath(),
+                                                                                         m_Map->GetMapCRC(), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey));
+                }
+
+                if( m_OHBot->HasMode( MODE_GARENA )) {
+                    m_OHBot->m_GarenaSocket->Broadcast(m_OHBot->m_GarenaPort,
+                                                       m_Protocol->SEND_W3GS_GAMEINFO(m_OHBot->m_TFT, m_OHBot->m_LANWar3Version, UTIL_CreateByteArray(MapGameType, false),
+                                                                                      m_Map->GetMapGameFlags(), m_Map->GetMapWidth(), m_Map->GetMapHeight(), m_GameName,
+                                                                                      m_OHBot->m_BotManagerName, GetTime() - GetCreationTime(), m_Map->GetMapPath(),
+                                                                                      m_Map->GetMapCRC(), slotstotal, slotsopen, m_HostPort, FixedHostCounter, m_EntryKey));
+                }
+            }
         }
 
         m_LastPingTime = GetTime( );

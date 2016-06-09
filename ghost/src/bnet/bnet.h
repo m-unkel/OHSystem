@@ -125,7 +125,6 @@ private:
     string m_UserPassword;							// battle.net password
     string m_FirstChannel;							// the first chat channel to join upon entering chat (note: we hijack this to store the last channel when entering a game)
     string m_CurrentChannel;						// the current chat channel
-    string m_RootAdmin;								// the root admin
     char m_CommandTrigger;							// the character prefix to identify commands
     unsigned char m_War3Version;					// custom warcraft 3 version for PvPGN users
     BYTEARRAY m_EXEVersion;							// custom exe version for PvPGN users
@@ -201,9 +200,6 @@ public:
     string GetCurrentChannel( )			{
         return m_CurrentChannel;
     }
-    string GetRootAdmin( )				{
-        return m_RootAdmin;
-    }
     char GetCommandTrigger( )			{
         return m_CommandTrigger;
     }
@@ -273,15 +269,12 @@ public:
 
     uint32_t IsLevel( string name );
     string GetLevelName ( uint32_t level );
-    bool IsRootAdmin( string name );
     CDBBan *IsBannedName( string name );
     CDBBan *IsBannedIP( string ip );
     void AddBan( string name, string ip, string gamename, string admin, string reason );
     void RemoveBan( string name );
     void HoldFriends( CBaseGame *game );
     void HoldClan( CBaseGame *game );
-    void CD_Print( string message );
-    void Hack_Print( string message );
 
 	static void RegisterPythonClass( );
 };

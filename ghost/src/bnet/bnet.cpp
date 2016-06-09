@@ -3409,22 +3409,15 @@ void CBNET::QueueGameRefresh(unsigned char state, string gameName, string hostNa
             MapHeight.push_back(192);
             MapHeight.push_back(7);
 
-            if (m_OHBot->m_Reconnect)
-                m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false),
-                                                                   map->GetMapGameFlags(), MapWidth, MapHeight,
-                                                                   gameName, hostName, upTime, "Save\\Multiplayer\\" +
-                                                                                               saveGame->GetFileNameNoPath(),
-                                                                   saveGame->GetMagicNumber(), map->GetMapSHA1(),
-                                                                   FixedHostCounter));
+            if (m_OHBot->HasMode( MODE_GPROXY ))
+                m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false), map->GetMapGameFlags(), MapWidth, MapHeight,
+                                                                   gameName, hostName, upTime, "Save\\Multiplayer\\" + saveGame->GetFileNameNoPath(),
+                                                                   saveGame->GetMagicNumber(), map->GetMapSHA1(), FixedHostCounter));
             else
-                m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false),
-                                                                   map->GetMapGameFlags(),
-                                                                   UTIL_CreateByteArray((uint16_t) 0, false),
-                                                                   UTIL_CreateByteArray((uint16_t) 0, false), gameName,
-                                                                   hostName, upTime, "Save\\Multiplayer\\" +
-                                                                                     saveGame->GetFileNameNoPath(),
-                                                                   saveGame->GetMagicNumber(), map->GetMapSHA1(),
-                                                                   FixedHostCounter));
+                m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false), map->GetMapGameFlags(),
+                                                                   UTIL_CreateByteArray((uint16_t) 0, false), UTIL_CreateByteArray((uint16_t) 0, false), gameName,
+                                                                   hostName, upTime, "Save\\Multiplayer\\" + saveGame->GetFileNameNoPath(),
+                                                                   saveGame->GetMagicNumber(), map->GetMapSHA1(), FixedHostCounter));
         }
         else {
             uint32_t MapGameType = map->GetMapGameType();
@@ -3492,17 +3485,12 @@ void CBNET::QueueGameRefresh(unsigned char state, string gameName, string hostNa
 
             //CONSOLE_Print("[INFO] Using now MapGameType: "+UTIL_ToString(MapGameType));
 
-            if (m_OHBot->m_Reconnect)
-                m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false),
-                                                                   map->GetMapGameFlags(), MapWidth, MapHeight,
-                                                                   gameName, hostName, upTime, map->GetMapPath(),
-                                                                   map->GetMapCRC(), map->GetMapSHA1(),
-                                                                   FixedHostCounter));
+            if (m_OHBot->HasMode( MODE_GPROXY))
+                m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false), map->GetMapGameFlags(), MapWidth, MapHeight,
+                                                                   gameName, hostName, upTime, map->GetMapPath(), map->GetMapCRC(), map->GetMapSHA1(), FixedHostCounter));
             else
-                m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false),
-                                                                   map->GetMapGameFlags(), map->GetMapWidth(),
-                                                                   map->GetMapHeight(), gameName, hostName, upTime,
-                                                                   map->GetMapPath(), map->GetMapCRC(),
+                m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false), map->GetMapGameFlags(), map->GetMapWidth(),
+                                                                   map->GetMapHeight(), gameName, hostName, upTime, map->GetMapPath(), map->GetMapCRC(),
                                                                    map->GetMapSHA1(), FixedHostCounter));
         }
     }
