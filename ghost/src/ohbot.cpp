@@ -631,6 +631,8 @@ COHBot :: COHBot( CConfig *CFG )
         m_BNETs.push_back( new CBNET( this, Server, ServerAlias, BNLSServer, (uint16_t)BNLSPort, (uint32_t)BNLSWardenCookie, CDKeyROC, CDKeyTFT, CountryAbbrev, Country, LocaleID, UserName, UserPassword, FirstChannel, BNETCommandTrigger[0], HoldFriends, HoldClan, PublicCommands, War3Version, EXEVersion, EXEVersionHash, PasswordHashType, PVPGNRealmName, MaxMessageLength, i, UpTime ) );
         counter++;
     }
+
+    // @TODO hardcoded ??? What Server / IP / Port is used?
     CONSOLE_Print( "[GHOST] Adding hardcoded Garena Realm & WC3Connect Realm." );
     m_BNETs.push_back( new CBNET( this, "Garena", "Garena", string( ), 0, 0, string( ), string( ), string( ), string( ), 1033, string( ), string( ), string( ), m_CommandTrigger, 0, 0, 1, 26, UTIL_ExtractNumbers( string( ), 4 ), UTIL_ExtractNumbers( string( ), 4 ), string( ), string( ), 200, counter+1, 0 ) );
     m_BNETs.push_back( new CBNET( this, m_WC3ConnectAlias, "WC3Connect", string( ), 0, 0, string( ), string( ), string( ), string( ), 1033, string( ), string( ), string( ), m_CommandTrigger, 0, 0, 1, 26, UTIL_ExtractNumbers( string( ), 4 ), UTIL_ExtractNumbers( string( ), 4 ), string( ), string( ), 200, counter+2, 0 ) );
@@ -638,25 +640,43 @@ COHBot :: COHBot( CConfig *CFG )
     if( m_BNETs.size( ) == 2 ) {
         CONSOLE_Print( "[GHOST] warning - no battle.net connections found in config file. Only the hardcoded" );
     }
+
     // extract common.j and blizzard.j from War3Patch.mpq if we can
     // these two files are necessary for calculating "map_crc" when loading maps so we make sure to do it before loading the default map
     // see CMap :: Load for more information
-
     ExtractScripts( );
 
-    // load the default maps (note: make sure to run ExtractScripts first)
-
-    if( m_DefaultMap.size( ) < 4 || m_DefaultMap.substr( m_DefaultMap.size( ) - 4 ) != ".cfg" )
-    {
+    CConfig MapCFG;
+    //DefaultMap: Config Path
+    if ( m_DefaultMap.size( ) < 4 || m_DefaultMap.substr( m_DefaultMap.size( ) - 4 ) != ".cfg" ) {
+        path MapCfgPath(m_MapCFGPath + m_DefaultMap + ".cfg");
         m_DefaultMap += ".cfg";
         CONSOLE_Print( "[GHOST] adding \".cfg\" to default map -> new default is [" + m_DefaultMap + "]" );
+    } else
+        path MapCfgPath( m_MapCFGPath + m_DefaultMap );
+    //DefaultMap: Map Path
+    path MapPath( m_MapPath + m_DefaultMap );
+
+    // MapCFG-File Found
+    if( exists(MapCfgPath) ) {
+        MapCFG.read( MapCfgPath );
+    }
+    // No MapCFG-File found, but a MapFile.. creating minimal config
+    else if( exists(MapPath) ) {
+        MapCFG.Set("map_path", "Maps\\Download\\" + m_DefaultMap);
+        MapCFG.Set("map_localpath", m_DefaultMap);
+    }
+    else {
+        m_DefaultMap = string();
     }
 
-    CConfig MapCFG;
-    MapCFG.Read( m_MapCFGPath + m_DefaultMap );
-    m_Map = new CMap( this, &MapCFG, m_MapCFGPath + m_DefaultMap );
-
-    m_AutoHostMap = new CMap( *m_Map );
+    if( m_DefaultMap.empty() ) {
+        m_Map = NULL;
+        m_AutoHostMap = NULL;
+    }else{
+        m_Map = new CMap( this, &MapCFG, m_MapCFGPath + m_DefaultMap );
+        m_AutoHostMap = new CMap( *m_Map );
+    }
     m_SaveGame = new CSaveGame( );
 
     if( m_BNETs.empty( ) )
@@ -1233,11 +1253,9 @@ bool COHBot :: Update( long usecBlock )
     {
         vector<string> commands = m_CallableCommandList->GetResult( );
 
-	string command;
-
         for( vector<string> :: iterator i = commands.begin( ); i != commands.end( ); ++i )
         {
-		HandleRCONCommand(*i);
+		    HandleRCONCommand(*i);
         }
 
         m_DB->RecoverCallable( m_CallableCommandList );
@@ -1575,8 +1593,7 @@ void COHBot :: SetConfigs( CConfig *CFG )
     m_FountainFarmBan = CFG->GetInt("oh_fountainfarmban", 0) == 0 ? false : true;
     m_GarenaPort = CFG->GetInt("garena_broadcastport", 1338);
     m_RejectingGameCheats = CFG->GetInt("ohs_rejectgamecheats", 1) == 0 ? false : true;
- 
-    LoadDatas();
+
     LoadRules();
     LoadRanks();
     ReadRoomData();
@@ -1868,27 +1885,6 @@ bool COHBot :: FlameCheck( string message )
     }
 
     return false;
-}
-
-void COHBot :: LoadDatas( )
-{
-    CConfig CFG;
-    CFG.Read( "default.cfg" );
-
-    for( uint32_t i = 1; i < 20; ++i )
-    {
-        string Prefix;
-
-        if( i == 1 )
-            Prefix = "oh_";
-        else
-            Prefix = "oh" + UTIL_ToString( i ) + "_";
-
-        string CName = CFG.GetString( Prefix + "cname", string( ) );
-        //string Mode = CFG.GetString( "mode", string( ) );
-        //m_Modes.push_back( Mode );
-        m_ColoredNames.push_back( CName );
-    }
 }
 
 void COHBot :: LoadRules( )
