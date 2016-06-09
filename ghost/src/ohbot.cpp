@@ -445,7 +445,7 @@ COHBot :: COHBot( CConfig *CFG )
     if ( CFG->GetInt("gproxy_mode", 0) ) {
 
         m_RunMode |= MODE_GPROXY;
-        m_ReconnectPort = dynamic_cast<uint16_t>( CFG->GetInt( "gproxy_port", 6114 ) );
+        m_ReconnectPort = CFG->GetInt( "gproxy_port", 6114 );
 
         // gproxy socket
         m_ReconnectSocket = NULL;
@@ -716,12 +716,13 @@ bool COHBot :: Update( long usecBlock )
 {
     m_StartTicks = GetTicks();
 
-    // todotodo: do we really want to shutdown if there's a database error? is there any way to recover from this?
+    // @TODO: do we really want to shutdown if there's a database error? is there any way to recover from this?
+    // @TODO: catch block at uncritical cases ?
 
     if( m_DB->HasError( ) )
     {
         CONSOLE_Print( "[GHOST] database error - " + m_DB->GetError( ) );
-        return true;
+        m_ExitingNice = true;
     }
 
 	boost::mutex::scoped_lock gamesLock( m_GamesMutex );
