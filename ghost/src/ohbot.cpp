@@ -396,13 +396,7 @@ int main( int argc, char **argv )
         delete gLog;
     }
 
-    CONSOLE_Print("***************************************************************************************");
-    CONSOLE_Print("**             Bye Bye, BE4M.DE's REWORKED OHSYSTEM BOT exited nicely!               **");
-    CONSOLE_Print("**       ----------------------------------------------------------------            **");
-    CONSOLE_Print("**        For any questions and required support use our git repository              **");
-    CONSOLE_Print("**                    https://github.com/m-unkel/OHSystem                            **");
-    CONSOLE_Print("***************************************************************************************");
-    CONSOLE_Print("");
+    cout << "** Exited nicely! **" << endl;
 
     return 0;
 }
@@ -415,6 +409,12 @@ COHBot :: COHBot( CConfig *CFG )
 {
     m_RunMode = 0;
 
+    m_DB = NULL;
+    m_Language = NULL;
+    m_Map = NULL;
+    m_AdminMap = NULL;
+    m_AutoHostMap = NULL;
+
     // enable lan mode ?
     if ( CFG->GetInt("lan_mode", 0) ) {
 
@@ -425,6 +425,8 @@ COHBot :: COHBot( CConfig *CFG )
         m_UDPSocket->SetBroadcastTarget( CFG->GetString( "udp_broadcasttarget", string( ) ) );
         m_UDPSocket->SetDontRoute(CFG->GetInt("udp_dontroute", 0 ) != 0);
 
+    }else{
+        m_UDPSocket = NULL;
     }
 
     // enable garena mode ?
@@ -439,6 +441,9 @@ COHBot :: COHBot( CConfig *CFG )
 
         // garena protocol
         m_GCBIProtocol = new CGCBIProtocol( );
+    }else{
+        m_GarenaSocket = NULL;
+        m_GCBIProtocol = NULL;
     }
 
     // enable gproxy mode ?
@@ -452,6 +457,9 @@ COHBot :: COHBot( CConfig *CFG )
 
         // gpsprotocol
         m_GPSProtocol = new CGPSProtocol( );
+    }else{
+        m_ReconnectSocket = NULL;
+        m_GPSProtocol = NULL;
     }
 
 
@@ -488,7 +496,6 @@ COHBot :: COHBot( CConfig *CFG )
     m_MinTicks = -1;
     m_Sampler = 0;
 
-    m_Language = NULL;
     isCreated = false;
     m_Exiting = false;
     m_ExitingNice = false;
@@ -657,11 +664,26 @@ COHBot :: COHBot( CConfig *CFG )
         CONSOLE_Print( "[GHOST] warning - no battle.net connections found and no admin game created" );
     }
 
-    CONSOLE_Print( "[GHOST] GHost++ Version " + m_Version + " (with MySQL support)" );
+    CONSOLE_Print( "[GHOST] BE4MHost++ Version " + m_Version + " (MySQL)" );
 }
 
 COHBot :: ~COHBot( )
 {
+    // remove games
+    if( m_CurrentGame )
+        m_CurrentGame->doDelete();
+
+    for( vector<CBaseGame *> :: iterator i = m_Games.begin( ); i != m_Games.end( ); ++i ) {
+        (*i)->doDelete();
+    }
+
+    delete m_CRC;
+    delete m_SHA;
+
+    // remove battle net sockets
+    for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
+        delete *i;
+
     // remove lan socket
     if( m_RunMode & MODE_LAN)
         delete m_UDPSocket;
@@ -682,28 +704,15 @@ COHBot :: ~COHBot( )
         delete m_GPSProtocol;
     }
 
-
-    delete m_CRC;
-    delete m_SHA;
-
-    for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-        delete *i;
-
-    if( m_CurrentGame )
-	    m_CurrentGame->doDelete();
-
-    for( vector<CBaseGame *> :: iterator i = m_Games.begin( ); i != m_Games.end( ); ++i ) {
-	(*i)->doDelete();
-    }
-
-    delete m_DB;
-
     // warning: we don't delete any entries of m_Callables here because we can't be guaranteed that the associated threads have terminated
     // this is fine if the program is currently exiting because the OS will clean up after us
     // but if you try to recreate the COHBot object within a single session you will probably leak resources!
 
 //	if( !m_Callables.empty( ) )
 //		CONSOLE_Print( "[GHOST] warning - " + UTIL_ToString( m_Callables.size( ) ) + " orphaned callables were leaked (this is not an error)" );
+
+
+    delete m_DB;
 
     delete m_Language;
     delete m_Map;
