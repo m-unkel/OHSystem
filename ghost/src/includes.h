@@ -63,10 +63,15 @@ uint32_t GetTicks( );		// milliseconds
 #undef FD_SETSIZE
 #define FD_SETSIZE 512
 
+// config
+
+#include "config.h"
+CConfig *CFG;
+string sCFGFile;
+
 // output
 
-void CONSOLE_Print( string message );
-void DEBUG_Print( string message );
-void DEBUG_Print( BYTEARRAY b );
+#include "log.h"
+CLog *Log;
 
 #endif

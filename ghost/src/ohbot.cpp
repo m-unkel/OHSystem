@@ -28,6 +28,7 @@
  */
 
 #include "ohbot.h"
+#include "log.h"
 #include "network/utils.h"
 #include "utils/util.h"
 #include "utils/crc32.h"
@@ -74,332 +75,6 @@
 #include <boost/filesystem.hpp>
 
 using namespace boost :: filesystem;
-
-string gCFGFile;
-string gLogFile;
-uint32_t gLogMethod;
-ofstream *gLog = NULL;
-COHBot *gGHost = NULL;
-CConfig CFG;
-
-uint32_t GetTime( )
-{
-    return GetTicks( ) / 1000;
-}
-
-uint32_t GetTicks( )
-{
-#ifdef WIN32
-    // don't use GetTickCount anymore because it's not accurate enough (~16ms resolution)
-    // don't use QueryPerformanceCounter anymore because it isn't guaranteed to be strictly increasing on some systems and thus requires "smoothing" code
-    // use timeGetTime instead, which typically has a high resolution (5ms or more) but we request a lower resolution on startup
-
-    return timeGetTime( );
-#elif __APPLE__
-    uint64_t current = mach_absolute_time( );
-    static mach_timebase_info_data_t info = { 0, 0 };
-    // get timebase info
-    if( info.denom == 0 )
-        mach_timebase_info( &info );
-    uint64_t elapsednano = current * ( info.numer / info.denom );
-    // convert ns to ms
-    return elapsednano / 1e6;
-#else
-    uint32_t ticks;
-    struct timespec t;
-    clock_gettime( CLOCK_MONOTONIC, &t );
-    ticks = t.tv_sec * 1000;
-    ticks += t.tv_nsec / 1000000;
-    return ticks;
-#endif
-}
-#ifndef WIN32
-void dumpstack(void){
-        static void *backbuf[ 50 ];
-        int levels = backtrace( backbuf, 50 );
-        char** strings = backtrace_symbols(backbuf, levels);
-
-        CONSOLE_Print("<DUMPSTACK>");
-
-        for(int i = 0; i < levels; i++)
-               CONSOLE_Print(strings[i]);
-
-        CONSOLE_Print("</DUMPSTACK>");
-
-        return;
-}
-
-void SignalSIGSEGV( int s ) {
-        cout << "SEGMENTATION FAULT ... DUMPING STACK ... " << s << endl;
-        dumpstack();
-        exit( 0 );
-}
-
-void SignalSIGILL( int s ) {
-        cout << "ILLEGAL INSTRUCTION ... DUMPING STACK ... " << s << endl;
-        dumpstack();
-        exit( 0 );
-}
-#endif
-void SignalCatcher2( int s )
-{
-    CONSOLE_Print( "[!!!] caught signal " + UTIL_ToString( s ) + ", exiting NOW" );
-
-    if( gGHost )
-    {
-        if( gGHost->m_Exiting )
-            exit( 1 );
-        else
-            gGHost->m_Exiting = true;
-    }
-    else
-        exit( 1 );
-}
-
-void SignalCatcher( int s )
-{
-    // signal( SIGABRT, SignalCatcher2 );
-    signal( SIGINT, SignalCatcher2 );
-
-    CONSOLE_Print( "[!!!] caught signal " + UTIL_ToString( s ) + ", exiting nicely" );
-
-    if( gGHost )
-        gGHost->m_ExitingNice = true;
-    else
-        exit( 1 );
-}
-
-CConfig GetCFG( )
-{
-        return CFG;
-}
-
-void CONSOLE_Print( string message )
-{
-
-    cout << message << endl;
-
-    // logging
-
-    if( !gLogFile.empty( ) )
-    {
-        if( gLogMethod == 1 )
-        {
-            ofstream Log;
-            Log.open( gLogFile.c_str( ), ios :: app );
-
-            if( !Log.fail( ) )
-            {
-                time_t Now = time( NULL );
-                string Time = asctime( localtime( &Now ) );
-
-                // erase the newline
-
-                Time.erase( Time.size( ) - 1 );
-                Log << "[" << Time << "] " << message << endl;
-                Log.close( );
-            }
-        }
-        else if( gLogMethod == 2 )
-        {
-            if( gLog && !gLog->fail( ) )
-            {
-                time_t Now = time( NULL );
-                string Time = asctime( localtime( &Now ) );
-
-                // erase the newline
-
-                Time.erase( Time.size( ) - 1 );
-                *gLog << "[" << Time << "] " << message << endl;
-                gLog->flush( );
-            }
-        }
-    }
-}
-
-
-void DEBUG_Print( string message )
-{
-    cout << message << endl;
-}
-
-void DEBUG_Print( BYTEARRAY b )
-{
-    cout << "{ ";
-
-    for( unsigned int i = 0; i < b.size( ); ++i )
-        cout << hex << (int)b[i] << " ";
-
-    cout << "}" << endl;
-}
-
-//
-// main
-//
-
-int main( int argc, char **argv )
-{
-#ifndef WIN32
-    signal( SIGILL, SignalSIGSEGV );
-    signal( SIGSEGV, SignalSIGSEGV );
-    signal( SIGFPE, SignalSIGSEGV );
-#endif
-    srand( time( NULL ) );
-
-    CONSOLE_Print("***************************************************************************************");
-    CONSOLE_Print("**                WELCOME TO BE4M.DE's REWORKED OHSYSTEM BOT V3                      **");
-    CONSOLE_Print("**       PLEASE DO NOT REMOVE ANY COPYRIGHT NOTICE TO RESPECT THE PROJECT            **");
-    CONSOLE_Print("**       ----------------------------------------------------------------            **");
-    CONSOLE_Print("**        For any questions and required support use our git repository              **");
-    CONSOLE_Print("**                    https://github.com/m-unkel/OHSystem                            **");
-    CONSOLE_Print("***************************************************************************************");
-    CONSOLE_Print("");
-
-
-    // read config file
-    CFG.Read( "default.cfg" );
-
-    // read overloaded config file
-    if( argc > 1 && argv[1] ) {
-        gCFGFile = argv[1];
-        CFG.Read( gCFGFile );
-    }
-    else {
-        gCFGFile = "";
-    }
-
-    gLogFile = CFG.GetString( "bot_log", "ohbot_" + UTIL_ToString( GetTime( ) ) + ".log" );
-    gLogMethod = CFG.GetInt( "bot_logmethod", 1 );
-
-    CONSOLE_Print( "[GHOST] starting up" );
-
-    if( !gLogFile.empty( ) )
-    {
-        if( gLogMethod == 1 )
-            // log method 1: open, append, and close the log for every message
-            // this works well on Linux but poorly on Windows, particularly as the log file grows in size
-            // the log file can be edited/moved/deleted while GHost++ is running
-            CONSOLE_Print( "[GHOST] using log method 1, logging is enabled and [" + gLogFile + "] will not be locked" );
-        else if( gLogMethod == 2 )
-        {
-            // log method 2: open the log on startup, flush the log for every message, close the log on shutdown
-            // the log file CANNOT be edited/moved/deleted while GHost++ is running
-
-            gLog = new ofstream( );
-            gLog->open( gLogFile.c_str( ), ios :: app );
-
-            if( gLog->fail( ) )
-                CONSOLE_Print( "[GHOST] using log method 2 but unable to open [" + gLogFile + "] for appending, logging is disabled" );
-            else
-                CONSOLE_Print( "[GHOST] using log method 2, logging is enabled and [" + gLogFile + "] is now locked" );
-        }
-    }
-    else
-        CONSOLE_Print( "[GHOST] no log file specified, logging is disabled" );
-
-    // catch SIGABRT and SIGINT
-    // signal( SIGABRT, SignalCatcher );
-    signal( SIGINT, SignalCatcher );
-
-#ifndef WIN32
-    // disable SIGPIPE since some systems like OS X don't define MSG_NOSIGNAL
-    signal( SIGPIPE, SIG_IGN );
-#endif
-
-#ifdef WIN32
-    // initialize timer resolution
-    // attempt to set the resolution as low as possible from 1ms to 5ms
-
-    unsigned int TimerResolution = 0;
-
-    for( unsigned int i = 1; i <= 5; ++i )
-    {
-        if( timeBeginPeriod( i ) == TIMERR_NOERROR )
-        {
-            TimerResolution = i;
-            break;
-        }
-        else if( i < 5 )
-            CONSOLE_Print( "[GHOST] error setting Windows timer resolution to " + UTIL_ToString( i ) + " milliseconds, trying a higher resolution" );
-        else
-        {
-            CONSOLE_Print( "[GHOST] error setting Windows timer resolution" );
-            return 1;
-        }
-    }
-
-    CONSOLE_Print( "[GHOST] using Windows timer with resolution " + UTIL_ToString( TimerResolution ) + " milliseconds" );
-#elif __APPLE__
-    // not sure how to get the resolution
-#else
-    // print the timer resolution
-
-    struct timespec Resolution;
-
-    if( clock_getres( CLOCK_MONOTONIC, &Resolution ) == -1 )
-        CONSOLE_Print( "[GHOST] error getting monotonic timer resolution" );
-    else
-        CONSOLE_Print( "[GHOST] using monotonic timer with resolution " + UTIL_ToString( (double)( Resolution.tv_nsec / 1000 ), 2 ) + " microseconds" );
-#endif
-
-#ifdef WIN32
-    // initialize winsock
-
-    CONSOLE_Print( "[GHOST] starting winsock" );
-    WSADATA wsadata;
-
-    if( WSAStartup( MAKEWORD( 2, 2 ), &wsadata ) != 0 )
-    {
-        CONSOLE_Print( "[GHOST] error starting winsock" );
-        return 1;
-    }
-
-    // increase process priority
-
-    CONSOLE_Print( "[GHOST] setting process priority to \"above normal\"" );
-    SetPriorityClass( GetCurrentProcess( ), ABOVE_NORMAL_PRIORITY_CLASS );
-#endif
-    // initialize ohbot
-
-    gGHost = new COHBot( &CFG );
-
-    while( 1 )
-    {
-        // block for 50ms on all sockets - if you intend to perform any timed actions more frequently you should change this
-        // that said it's likely we'll loop more often than this due to there being data waiting on one of the sockets but there aren't any guarantees
-
-        if( gGHost->Update( 50000 ) )
-            break;
-    }
-
-    // shutdown ohbot
-
-    CONSOLE_Print( "[GHOST] shutting down" );
-    delete gGHost;
-    gGHost = NULL;
-#ifdef WIN32
-    // shutdown winsock
-
-    CONSOLE_Print( "[GHOST] shutting down winsock" );
-    WSACleanup( );
-
-    // shutdown timer
-
-    timeEndPeriod( TimerResolution );
-#endif
-
-    if( gLog )
-    {
-        if( !gLog->fail( ) )
-            gLog->close( );
-
-        delete gLog;
-    }
-
-    cout << "** Exited nicely! **" << endl;
-
-    return 0;
-}
 
 //
 // COHBot
@@ -468,12 +143,12 @@ COHBot :: COHBot( CConfig *CFG )
     m_SHA = new CSHA1( );
 
     // database connection
-    CONSOLE_Print( "[GHOST] opening primary database" );
+    Log->Info( "[GHOST] opening primary database" );
     m_DB = new COHBotDBMySQL( CFG );
 
     // get a list of local IP addresses
     // this list is used elsewhere to determine if a player connecting to the bot is local or not
-    CONSOLE_Print( "[GHOST] attempting to find local IP addresses" );
+    Log->Info( "[GHOST] attempting to find local IP addresses" );
     GetLocalAddresses( &m_LocalAddresses );
 
     // initialize vars
@@ -595,36 +270,36 @@ COHBot :: COHBot( CConfig *CFG )
 
         if( CDKeyROC.empty( ) )
         {
-            CONSOLE_Print( "[GHOST] missing " + Prefix + "cdkeyroc, skipping this battle.net connection" );
+            Log->Write( "[GHOST] missing " + Prefix + "cdkeyroc, skipping this battle.net connection" );
             continue;
         }
 
         if( m_TFT && CDKeyTFT.empty( ) )
         {
-            CONSOLE_Print( "[GHOST] missing " + Prefix + "cdkeytft, skipping this battle.net connection" );
+            Log->Write( "[GHOST] missing " + Prefix + "cdkeytft, skipping this battle.net connection" );
             continue;
         }
 
         if( UserName.empty( ) )
         {
-            CONSOLE_Print( "[GHOST] missing " + Prefix + "username, skipping this battle.net connection" );
+            Log->Write( "[GHOST] missing " + Prefix + "username, skipping this battle.net connection" );
             continue;
         }
 
         if( UserPassword.empty( ) )
         {
-            CONSOLE_Print( "[GHOST] missing " + Prefix + "password, skipping this battle.net connection" );
+            Log->Write( "[GHOST] missing " + Prefix + "password, skipping this battle.net connection" );
             continue;
         }
 
-        CONSOLE_Print( "[GHOST] found battle.net connection #" + UTIL_ToString( i ) + " for server [" + Server + "]" );
+        Log->Info( "[GHOST] found battle.net connection #" + UTIL_ToString( i ) + " for server [" + Server + "]" );
 
         if( Locale == "system" )
         {
 #ifdef WIN32
             CONSOLE_Print( "[GHOST] using system locale of " + UTIL_ToString( LocaleID ) );
 #else
-            CONSOLE_Print( "[GHOST] unable to get system locale, using default locale of 1033" );
+            Log->Warning( "[GHOST] unable to get system locale, using default locale of 1033" );
 #endif
         }
 
@@ -633,12 +308,12 @@ COHBot :: COHBot( CConfig *CFG )
     }
 
     // @TODO hardcoded ??? What Server / IP / Port is used?
-    CONSOLE_Print( "[GHOST] Adding hardcoded Garena Realm & WC3Connect Realm." );
+    Log->Info( "[GHOST] Adding hardcoded Garena Realm & WC3Connect Realm." );
     m_BNETs.push_back( new CBNET( this, "Garena", "Garena", string( ), 0, 0, string( ), string( ), string( ), string( ), 1033, string( ), string( ), string( ), m_CommandTrigger, 0, 0, 1, 26, UTIL_ExtractNumbers( string( ), 4 ), UTIL_ExtractNumbers( string( ), 4 ), string( ), string( ), 200, counter+1, 0 ) );
     m_BNETs.push_back( new CBNET( this, m_WC3ConnectAlias, "WC3Connect", string( ), 0, 0, string( ), string( ), string( ), string( ), 1033, string( ), string( ), string( ), m_CommandTrigger, 0, 0, 1, 26, UTIL_ExtractNumbers( string( ), 4 ), UTIL_ExtractNumbers( string( ), 4 ), string( ), string( ), 200, counter+2, 0 ) );
 
     if( m_BNETs.size( ) == 2 ) {
-        CONSOLE_Print( "[GHOST] warning - no battle.net connections found in config file. Only the hardcoded" );
+        Log->Warning( "[GHOST] no battle.net connections found in config file. Only the hardcoded" );
     }
 
     // extract common.j and blizzard.j from War3Patch.mpq if we can
@@ -646,12 +321,12 @@ COHBot :: COHBot( CConfig *CFG )
     // see CMap :: Load for more information
     ExtractScripts( );
 
-    CConfig MapCFG;
+    CConfig *MapCFG = new CConfig();
     //DefaultMap: Config Path
     if ( m_DefaultMap.size( ) < 4 || m_DefaultMap.substr( m_DefaultMap.size( ) - 4 ) != ".cfg" ) {
         path MapCfgPath(m_MapCFGPath + m_DefaultMap + ".cfg");
         m_DefaultMap += ".cfg";
-        CONSOLE_Print( "[GHOST] adding \".cfg\" to default map -> new default is [" + m_DefaultMap + "]" );
+        Log->Info( "[GHOST] adding \".cfg\" to default map -> new default is [" + m_DefaultMap + "]" );
     } else
         path MapCfgPath( m_MapCFGPath + m_DefaultMap );
     //DefaultMap: Map Path
@@ -659,12 +334,12 @@ COHBot :: COHBot( CConfig *CFG )
 
     // MapCFG-File Found
     if( exists(MapCfgPath) ) {
-        MapCFG.read( MapCfgPath );
+        MapCFG->Read( MapCfgPath );
     }
     // No MapCFG-File found, but a MapFile.. creating minimal config
     else if( exists(MapPath) ) {
-        MapCFG.Set("map_path", "Maps\\Download\\" + m_DefaultMap);
-        MapCFG.Set("map_localpath", m_DefaultMap);
+        MapCFG->Set("map_path", "Maps\\Download\\" + m_DefaultMap);
+        MapCFG->Set("map_localpath", m_DefaultMap);
     }
     else {
         m_DefaultMap = string();
@@ -674,17 +349,19 @@ COHBot :: COHBot( CConfig *CFG )
         m_Map = NULL;
         m_AutoHostMap = NULL;
     }else{
-        m_Map = new CMap( this, &MapCFG, m_MapCFGPath + m_DefaultMap );
+        m_Map = new CMap( this, MapCFG, m_MapCFGPath + m_DefaultMap );
         m_AutoHostMap = new CMap( *m_Map );
     }
+    delete MapCFG;
+
     m_SaveGame = new CSaveGame( );
 
     if( m_BNETs.empty( ) )
     {
-        CONSOLE_Print( "[GHOST] warning - no battle.net connections found and no admin game created" );
+        Log->Warning( "[GHOST] no battle.net connections found and no admin game created" );
     }
 
-    CONSOLE_Print( "[GHOST] BE4MHost++ Version " + m_Version + " (MySQL)" );
+    Log->Info( "[GHOST] BE4MHost++ Version " + m_Version + " (MySQL)" );
 }
 
 COHBot :: ~COHBot( )
@@ -750,7 +427,7 @@ bool COHBot :: Update( long usecBlock )
 
     if( m_DB->HasError( ) )
     {
-        CONSOLE_Print( "[GHOST] database error - " + m_DB->GetError( ) );
+        Log->Write( "[GHOST] database error - " + m_DB->GetError( ) );
         m_ExitingNice = true;
     }
 
@@ -789,7 +466,7 @@ bool COHBot :: Update( long usecBlock )
     {
         if( !m_BNETs.empty( ) )
         {
-            CONSOLE_Print( "[GHOST] deleting all battle.net connections in preparation for exiting nicely" );
+            Log->Info( "[GHOST] deleting all battle.net connections in preparation for exiting nicely" );
 
             for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
                 delete *i;
@@ -799,7 +476,7 @@ bool COHBot :: Update( long usecBlock )
 
         if( m_CurrentGame )
         {
-            CONSOLE_Print( "[GHOST] deleting current game in preparation for exiting nicely" );
+            Log->Info( "[GHOST] deleting current game in preparation for exiting nicely" );
             m_CurrentGame->doDelete( );
             m_CurrentGame = NULL;
         }
@@ -808,8 +485,8 @@ bool COHBot :: Update( long usecBlock )
         {
             if( !m_AllGamesFinished )
             {
-                CONSOLE_Print( "[GHOST] all games finished, waiting 60 seconds for threads to finish" );
-                CONSOLE_Print( "[GHOST] there are " + UTIL_ToString( m_Callables.size( ) ) + " threads in progress" );
+                Log->Info( "[GHOST] all games finished, waiting 60 seconds for threads to finish" );
+                Log->Warning( "[GHOST] there are " + UTIL_ToString( m_Callables.size( ) ) + " threads in progress" );
                 m_AllGamesFinished = true;
                 m_AllGamesFinishedTime = GetTime( );
             }
@@ -817,13 +494,13 @@ bool COHBot :: Update( long usecBlock )
             {
                 if( m_Callables.empty( ) )
                 {
-                    CONSOLE_Print( "[GHOST] all threads finished, exiting nicely" );
+                    Log->Info( "[GHOST] all threads finished, exiting nicely" );
                     m_Exiting = true;
                 }
                 else if( GetTime( ) - m_AllGamesFinishedTime >= 60 )
                 {
-                    CONSOLE_Print( "[GHOST] waited 60 seconds for threads to finish, exiting anyway" );
-                    CONSOLE_Print( "[GHOST] there are " + UTIL_ToString( m_Callables.size( ) ) + " threads still in progress which will be terminated" );
+                    Log->Info( "[GHOST] waited 60 seconds for threads to finish, exiting anyway" );
+                    Log->Warning( "[GHOST] there are " + UTIL_ToString( m_Callables.size( ) ) + " threads still in progress which will be terminated" );
                     m_Exiting = true;
                 }
             }
@@ -857,10 +534,10 @@ bool COHBot :: Update( long usecBlock )
             m_ReconnectSocket = new CTCPServer( );
 
             if( m_ReconnectSocket->Listen( m_BindAddress, m_ReconnectPort ) )
-                CONSOLE_Print( "[GHOST] listening for GProxy++ reconnects on port " + UTIL_ToString( m_ReconnectPort ) );
+                Log->Info( "[GHOST] listening for GProxy++ reconnects on port " + UTIL_ToString( m_ReconnectPort ) );
             else
             {
-                CONSOLE_Print( "[GHOST] error listening for GProxy++ reconnects on port " + UTIL_ToString( m_ReconnectPort ) );
+                Log->Info( "[GHOST] error listening for GProxy++ reconnects on port " + UTIL_ToString( m_ReconnectPort ) );
                 delete m_ReconnectSocket;
                 m_ReconnectSocket = NULL;
                 m_RunMode ^= MODE_GPROXY;
@@ -868,7 +545,7 @@ bool COHBot :: Update( long usecBlock )
         }
         else if( m_ReconnectSocket->HasError( ) )
         {
-            CONSOLE_Print( "[GHOST] GProxy++ reconnect listener error (" + m_ReconnectSocket->GetErrorString( ) + ")" );
+            Log->Write( "[GHOST] GProxy++ reconnect listener error (" + m_ReconnectSocket->GetErrorString( ) + ")" );
             delete m_ReconnectSocket;
             m_ReconnectSocket = NULL;
             m_RunMode ^= MODE_GPROXY;
@@ -1090,10 +767,10 @@ bool COHBot :: Update( long usecBlock )
                             if( !m_Map->GetMapMatchMakingCategory( ).empty( ) )
                             {
                                 if( !( m_Map->GetMapOptions( ) & MAPOPT_FIXEDPLAYERSETTINGS ) )
-                                    CONSOLE_Print( "[GHOST] autohostmm - map_matchmakingcategory [" + m_Map->GetMapMatchMakingCategory( ) + "] found but matchmaking can only be used with fixed player settings, matchmaking disabled" );
+                                    Log->Warning( "[GHOST] autohostmm - map_matchmakingcategory [" + m_Map->GetMapMatchMakingCategory( ) + "] found but matchmaking can only be used with fixed player settings, matchmaking disabled" );
                                 else
                                 {
-                                    CONSOLE_Print( "[GHOST] autohostmm - map_matchmakingcategory [" + m_Map->GetMapMatchMakingCategory( ) + "] found, matchmaking enabled" );
+                                    Log->Info( "[GHOST] autohostmm - map_matchmakingcategory [" + m_Map->GetMapMatchMakingCategory( ) + "] found, matchmaking enabled" );
 
                                     m_CurrentGame->SetMatchMaking( true );
                                     m_CurrentGame->SetMinimumScore( m_AutoHostMinimumScore );
@@ -1101,13 +778,13 @@ bool COHBot :: Update( long usecBlock )
                                 }
                             }
                             else
-                                CONSOLE_Print( "[GHOST] autohostmm - map_matchmakingcategory not found, matchmaking disabled" );
+                                Log->Warning( "[GHOST] autohostmm - map_matchmakingcategory not found, matchmaking disabled" );
                         }
                     }
                 }
                 else
                 {
-                    CONSOLE_Print( "[GHOST] stopped auto hosting, next game name [" + GameName + "] is too long (the maximum is 31 characters)" );
+                    Log->Warning( "[GHOST] stopped auto hosting, next game name [" + GameName + "] is too long (the maximum is 31 characters)" );
                     m_AutoHostGameName.clear( );
                     m_AutoHostOwner.clear( );
                     m_AutoHostServer.clear( );
@@ -1120,7 +797,7 @@ bool COHBot :: Update( long usecBlock )
             }
             else
             {
-                CONSOLE_Print( "[GHOST] stopped auto hosting, map config file [" + m_AutoHostMap->GetCFGFile( ) + "] is invalid" );
+                Log->Warning( "[GHOST] stopped auto hosting, map config file [" + m_AutoHostMap->GetCFGFile( ) + "] is invalid" );
                 m_AutoHostGameName.clear( );
                 m_AutoHostOwner.clear( );
                 m_AutoHostServer.clear( );
@@ -1283,8 +960,8 @@ bool COHBot :: Update( long usecBlock )
     if(GetTicks() - m_TicksCollectionTimer >= 60000) {
         m_AVGTicks = m_TicksCollection/m_Sampler;
         m_TicksCollectionTimer = GetTicks();
-        CONSOLE_Print("[OHSystem-Performance-Check] AVGTicks: "+UTIL_ToString(m_AVGTicks, 0)+"ms | MaxTicks: "+UTIL_ToString(m_MaxTicks)+"ms | MinTicks: "+UTIL_ToString(m_MinTicks)+"ms | Updates: "+UTIL_ToString(m_Sampler));
-        CONSOLE_Print("[OHSystem-Performance-CHeck] MySQL: "+m_DB->GetStatus( ));
+        Log->Info("[OHSystem-Performance-Check] AVGTicks: "+UTIL_ToString(m_AVGTicks, 0)+"ms | MaxTicks: "+UTIL_ToString(m_MaxTicks)+"ms | MinTicks: "+UTIL_ToString(m_MinTicks)+"ms | Updates: "+UTIL_ToString(m_Sampler));
+        Log->Info("[OHSystem-Performance-CHeck] MySQL: "+m_DB->GetStatus( ));
         m_MinTicks = -1;
         m_MaxTicks = 0;
         m_TicksCollection = 0;
@@ -1390,13 +1067,14 @@ bool COHBot :: HasMode( unsigned char mode ) {
 
 void COHBot :: ReloadConfigs( )
 {
-    CConfig CFG;
-    CFG.Read( "default.cfg" );
+    delete CFG;
+    CFG = new CConfig();
+    CFG->Read( "default.cfg" );
     // load extended botid config
-    if ( gCFGFile != "" ) {
-        CFG.Read(gCFGFile);
+    if ( sCFGFile != "" ) {
+        CFG->Read(sCFGFile);
     }
-    SetConfigs( &CFG );
+    SetConfigs( CFG );
 }
 
 void COHBot :: SetConfigs( CConfig *CFG )
@@ -1443,7 +1121,7 @@ void COHBot :: SetConfigs( CConfig *CFG )
     if( m_VirtualHostName.size( ) > 15 )
     {
         m_VirtualHostName = "|cFF4080C0GHost";
-        CONSOLE_Print( "[GHOST] warning - bot_virtualhostname is longer than 15 characters, using default virtual host name" );
+        Log->Warning( "[GHOST] bot_virtualhostname is longer than 15 characters, using default virtual host name" );
     }
 
     // ohsystem features
@@ -1491,9 +1169,9 @@ void COHBot :: SetConfigs( CConfig *CFG )
 
     m_TFT = CFG->GetInt( "bot_tft", 1 ) == 0 ? false : true;
     if( m_TFT )
-        CONSOLE_Print( "[GHOST] acting as Warcraft III: The Frozen Throne" );
+        Log->Info( "[GHOST] acting as Warcraft III: The Frozen Throne" );
     else
-        CONSOLE_Print( "[GHOST] acting as Warcraft III: Reign of Chaos" );
+        Log->Info( "[GHOST] acting as Warcraft III: Reign of Chaos" );
 
 
     m_OHBalance = CFG->GetInt( "oh_balance", 1 ) == 0 ? false : true;
@@ -1542,7 +1220,7 @@ void COHBot :: SetConfigs( CConfig *CFG )
     if( m_VoteKickPercentage > 100 )
     {
         m_VoteKickPercentage = 100;
-        CONSOLE_Print( "[GHOST] warning - bot_votekickpercentage is greater than 100, using 100 instead" );
+        Log->Warning( "[GHOST] bot_votekickpercentage is greater than 100, using 100 instead" );
     }
     m_VKAbuseBanTime = CFG->GetInt("oh_votekickabusebantime", 432000);
 
@@ -1584,7 +1262,7 @@ void COHBot :: SetConfigs( CConfig *CFG )
     m_AutoHostGameType = CFG->GetInt( "oh_autohosttype", 3 );
     m_AutoRehostTime = CFG->GetInt("oh_auto_rehost_time", 0);
     if(m_AutoRehostTime<10 && m_AutoRehostTime!=0) { 
-	m_AutoRehostTime=10; 
+	    m_AutoRehostTime=10;
     }
 
     m_DenyLimit = CFG->GetInt("oh_cc_deny_limit", 2);
@@ -1609,7 +1287,7 @@ void COHBot :: ExtractScripts( )
 
     if( SFileOpenArchive( PatchMPQFileName.c_str( ), 0, MPQ_OPEN_FORCE_MPQ_V1, &PatchMPQ ) )
     {
-        CONSOLE_Print( "[GHOST] loading MPQ file [" + PatchMPQFileName + "]" );
+        Log->Info( "[GHOST] loading MPQ file [" + PatchMPQFileName + "]" );
         HANDLE SubFile;
 
         // common.j
@@ -1625,11 +1303,11 @@ void COHBot :: ExtractScripts( )
 
                 if( SFileReadFile( SubFile, SubFileData, FileLength, &BytesRead ) )
                 {
-                    CONSOLE_Print( "[GHOST] extracting Scripts\\common.j from MPQ file to [" + m_MapCFGPath + "common.j]" );
+                    Log->Info( "[GHOST] extracting Scripts\\common.j from MPQ file to [" + m_MapCFGPath + "common.j]" );
                     UTIL_FileWrite( m_MapCFGPath + "common.j", (unsigned char *)SubFileData, BytesRead );
                 }
                 else
-                    CONSOLE_Print( "[GHOST] warning - unable to extract Scripts\\common.j from MPQ file" );
+                    Log->Warning( "[GHOST] unable to extract Scripts\\common.j from MPQ file" );
 
                 delete [] SubFileData;
             }
@@ -1637,7 +1315,7 @@ void COHBot :: ExtractScripts( )
             SFileCloseFile( SubFile );
         }
         else
-            CONSOLE_Print( "[GHOST] couldn't find Scripts\\common.j in MPQ file" );
+            Log->Write( "[GHOST] couldn't find Scripts\\common.j in MPQ file" );
 
         // blizzard.j
 
@@ -1652,11 +1330,11 @@ void COHBot :: ExtractScripts( )
 
                 if( SFileReadFile( SubFile, SubFileData, FileLength, &BytesRead ) )
                 {
-                    CONSOLE_Print( "[GHOST] extracting Scripts\\blizzard.j from MPQ file to [" + m_MapCFGPath + "blizzard.j]" );
+                    Log->Info( "[GHOST] extracting Scripts\\blizzard.j from MPQ file to [" + m_MapCFGPath + "blizzard.j]" );
                     UTIL_FileWrite( m_MapCFGPath + "blizzard.j", (unsigned char *)SubFileData, BytesRead );
                 }
                 else
-                    CONSOLE_Print( "[GHOST] warning - unable to extract Scripts\\blizzard.j from MPQ file" );
+                    Log->Warning( "[GHOST] unable to extract Scripts\\blizzard.j from MPQ file" );
 
                 delete [] SubFileData;
             }
@@ -1664,12 +1342,12 @@ void COHBot :: ExtractScripts( )
             SFileCloseFile( SubFile );
         }
         else
-            CONSOLE_Print( "[GHOST] couldn't find Scripts\\blizzard.j in MPQ file" );
+            Log->Write( "[GHOST] couldn't find Scripts\\blizzard.j in MPQ file" );
 
         SFileCloseArchive( PatchMPQ );
     }
     else
-        CONSOLE_Print( "[GHOST] warning - unable to load MPQ file [" + PatchMPQFileName + "] - error code " + UTIL_ToString( GetLastError( ) ) );
+        Log->Warning( "[GHOST] unable to load MPQ file [" + PatchMPQFileName + "] - error code " + UTIL_ToString( GetLastError( ) ) );
 }
 
 void COHBot :: CreateGame( CMap *map, unsigned char gameState, bool saveGame, string gameName, string ownerName, string creatorName, string creatorServer, uint32_t gameType, bool whisper, uint32_t m_HostCounter )
@@ -1726,7 +1404,7 @@ void COHBot :: CreateGame( CMap *map, unsigned char gameState, bool saveGame, st
 
         if( MapPath1 != MapPath2 )
         {
-            CONSOLE_Print( "[GHOST] path mismatch, saved game path is [" + MapPath1 + "] but map path is [" + MapPath2 + "]" );
+            Log->Warning( "[GHOST] path mismatch, saved game path is [" + MapPath1 + "] but map path is [" + MapPath2 + "]" );
 
             for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
             {
@@ -1774,7 +1452,7 @@ void COHBot :: CreateGame( CMap *map, unsigned char gameState, bool saveGame, st
 
     lock.unlock( );
 
-    CONSOLE_Print( "[GHOST] creating game [" + gameName + "]" );
+    Log->Info( "[GHOST] creating game [" + gameName + "]" );
     if( m_HostCounter == 0 )
         m_HostCounter = GetNewHostCounter( );
 
@@ -1843,7 +1521,7 @@ void COHBot :: CreateGame( CMap *map, unsigned char gameState, bool saveGame, st
     }
 
     boost::thread(&CBaseGame::loop, m_CurrentGame);
-    CONSOLE_Print("[GHOST] Created a new Game Thread.");
+    Log->Info("[GHOST] Created a new Game Thread.");
 }
 
 bool COHBot :: FlameCheck( string message )
@@ -1902,7 +1580,7 @@ void COHBot :: LoadRules( )
         myfile.close();
     }
     else
-        CONSOLE_Print( "Unable to open rules.txt" );
+        Log->Write( "Unable to open rules.txt" );
 }
 
 uint32_t COHBot :: GetNewHostCounter( )
@@ -1912,7 +1590,7 @@ uint32_t COHBot :: GetNewHostCounter( )
         m_HostCounter = m_ReservedHostCounter;
         m_ReservedHostCounter = 0;
         m_LastHCUpdate = GetTime();
-        CONSOLE_Print( "[INFO] Set new hostcounter to: "+UTIL_ToString(m_HostCounter));
+        Log->Info( "[INFO] Set new hostcounter to: "+UTIL_ToString(m_HostCounter));
         return m_HostCounter;
     }
     return m_HostCounter;
@@ -1945,15 +1623,15 @@ void COHBot :: LoadRanks( )
     }
     else
     {
-        CONSOLE_Print("[GHOST] warning - unable to read file [ranks.txt]");
+        Log->Write("[GHOST] unable to read file [ranks.txt]");
         m_RanksLoaded = false;
     }
 
     if(m_Ranks.size() < 10 && m_RanksLoaded) {
-        CONSOLE_Print("[CONFIG] warning - ranks.txt doesn't contain enough levelnames. You require at least 11 rank names (Level 0 - Level 10, with 0).");
+        Log->Warning("[CONFIG] ranks.txt doesn't contain enough levelnames. You require at least 11 rank names (Level 0 - Level 10, with 0).");
         m_RanksLoaded = false;
     } else if(m_RanksLoaded) {
-		CONSOLE_Print("[GHOST] loading file [ranks.txt]");
+		Log->Info("[GHOST] loading file [ranks.txt]");
     }
 }
 
@@ -1971,11 +1649,11 @@ void COHBot :: LoadInsult()
             getline( in, Line );
             m_Insults.push_back(Line);
         }
-	CONSOLE_Print("[GHOST] loading file [insult.txt]");
+	    Log->Info("[GHOST] loading file [insult.txt]");
         in.close( );
     }
     else
-        CONSOLE_Print("[GHOST] warning - unable to read file [insult.txt].");
+        Log->Warning("[GHOST]  unable to read file [insult.txt].");
 }
 
 string COHBot :: GetTimeFunction( uint32_t type )
@@ -2024,10 +1702,10 @@ void COHBot :: ReadRoomData()
     in.open( file.c_str( ) );
     m_LanRoomName.clear();
     if( in.fail( ) )
-        CONSOLE_Print( "[GHOST] warning - unable to read file [" + file + "]" );
+        Log->Warning( "[GHOST] unable to read file [" + file + "]" );
     else
     {
-        CONSOLE_Print( "[GHOST] loading file [" + file + "]" );
+        Log->Info( "[GHOST] loading file [" + file + "]" );
         string Line;
         while( !in.eof( ) )
         {
@@ -2259,11 +1937,11 @@ void COHBot :: HandleRCONCommand( string incommingcommand ) {
 	SS >> waste;
 
 	if( SS.fail( ) || waste.empty() )
-		DEBUG_Print("Bad input for RCON command #1");
+		Log->Debug("Bad input for RCON command #1");
 	else {
 		SS >> gameid;
 		if( SS.fail( ) )
-			DEBUG_Print("Bad input for RCON command #2");
+			Log->Debug("Bad input for RCON command #2");
 		else {
 			SS >> execplayer;
                         if( !SS.eof( ) )
@@ -2329,8 +2007,8 @@ void COHBot :: LoadLanguages( ) {
 
         if( !exists( LanCFGPath ) )
         {
-            CONSOLE_Print ("[ERROR] Could not find any language file. Shutting down.");
-            m_Exiting = true;
+            Log->Write("[ERROR] Could not find any language file. Shutting down.");
+            m_ExitingNice = true;
         }
         else
         {
@@ -2360,7 +2038,7 @@ void COHBot :: LoadLanguages( ) {
     }
     catch( const exception &ex )
     {
-        CONSOLE_Print( "[ERROR] error listing language files - caught exception " + *ex.what( ) );
+        Log->Write( "[ERROR] error listing language files - caught exception " + *ex.what( ) );
     }
     */
 }

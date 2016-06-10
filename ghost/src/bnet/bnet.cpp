@@ -2725,8 +2725,7 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
                     }
                 }
                 catch (const exception &ex) {
-                    CONSOLE_Print(
-                            "[BNET: " + m_ServerAlias + "] error listing maps - caught exception [" + ex.what() + "]");
+                    CONSOLE_Print( "[BNET: " + m_ServerAlias + "] error listing maps - caught exception [" + ex.what() + "]");
                     QueueChatCommand(m_OHBot->m_Language->ErrorListingMaps(), User, Whisper);
                 }
             }

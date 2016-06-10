@@ -25,10 +25,10 @@
 
 #include "includes.h"
 
-#define MODE_LAN			0x1
-#define MODE_GARENA			0x2
-#define MODE_BNET			0x4
-#define MODE_GPROXY			0x8
+#define MODE_LAN			1
+#define MODE_GARENA			2
+#define MODE_BNET			4
+#define MODE_GPROXY			8
 
 
 //
@@ -69,8 +69,6 @@ struct GProxyReconnector {
 	uint32_t LastPacket;
 	uint32_t PostedTime;
 };
-
-CConfig GetCFG( );
 
 class COHBot
 {
@@ -343,7 +341,6 @@ public:
     void CreateGame( CMap *map, unsigned char gameState, bool saveGame, string gameName, string ownerName, string creatorName, string creatorServer, uint32_t gameType, bool whisper, uint32_t m_HostCounter );
     bool FlameCheck( string message );
     void GetDeniedCountries( );
-    void LoadDatas( );
     void LoadRules( );
     void LoadRanks( );
     virtual uint32_t GetNewHostCounter( );
