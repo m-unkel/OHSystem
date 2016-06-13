@@ -28,9 +28,9 @@
 #include "../database/ghostdb.h"
 #include "../bnet/bnet.h"
 #include "../map.h"
-#include "../utils/packed.h"
-#include "../savegame.h"
-#include "../replay.h"
+#include "../replay/packed.h"
+#include "../replay/savegame.h"
+#include "../replay/replay.h"
 #include "gameplayer.h"
 #include "gameprotocol.h"
 #include "game_base.h"
@@ -140,10 +140,10 @@ CBaseGame :: CBaseGame( COHBot *nOHBot, CMap *nMap, CSaveGame *nSaveGame, uint16
         in.open( m_OHBot->m_IPBlackListFile.c_str( ) );
 
         if( in.fail( ) )
-            CONSOLE_Print( "[GAME: " + m_GameName + "] error loading IP blacklist file [" + m_OHBot->m_IPBlackListFile + "]" );
+            Log->Write( "[GAME: " + m_GameName + "] error loading IP blacklist file [" + m_OHBot->m_IPBlackListFile + "]" );
         else
         {
-            CONSOLE_Print( "[GAME: " + m_GameName + "] loading IP blacklist file [" + m_OHBot->m_IPBlackListFile + "]" );
+            Log->Info( "[GAME: " + m_GameName + "] loading IP blacklist file [" + m_OHBot->m_IPBlackListFile + "]" );
             string Line;
 
             while( !in.eof( ) )
@@ -171,19 +171,19 @@ CBaseGame :: CBaseGame( COHBot *nOHBot, CMap *nMap, CSaveGame *nSaveGame, uint16
 
             in.close( );
 
-            CONSOLE_Print( "[GAME: " + m_GameName + "] loaded " + UTIL_ToString( m_IPBlackList.size( ) ) + " lines from IP blacklist file" );
+            Log->Info( "[GAME: " + m_GameName + "] loaded " + UTIL_ToString( m_IPBlackList.size( ) ) + " lines from IP blacklist file" );
         }
     }
 
     // start listening for connections
 
-    CONSOLE_Print( "[GAME: " + m_GameName + "] attempting to bind to all available addresses" );
+    Log->Info( "[GAME: " + m_GameName + "] attempting to bind to all available addresses" );
 
     if( m_Socket->Listen( string( ), m_HostPort ) )
-        CONSOLE_Print( "[GAME: " + m_GameName + "] listening on port " + UTIL_ToString( m_HostPort ) );
+        Log->Info( "[GAME: " + m_GameName + "] listening on port " + UTIL_ToString( m_HostPort ) );
     else
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] error listening on port " + UTIL_ToString( m_HostPort ) );
+        Log->Write( "[GAME: " + m_GameName + "] error listening on port " + UTIL_ToString( m_HostPort ) );
         m_Exiting = true;
     }
 }
@@ -332,7 +332,7 @@ void CBaseGame :: loop( )
 
 		if( Update( &fd, &send_fd ) )
 		{
-			CONSOLE_Print( "[GameThread] deleting game [" + GetGameName( ) + "]" );
+            Log->Info( "[GameThread] deleting game [" + GetGameName( ) + "]" );
 			m_DoDelete = 3;
 			break;
 		}
@@ -678,10 +678,10 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
                 else if(  Result == 2 )
                     SendAllChat( m_OHBot->m_Language->BannedUserForReachingTooManyPPoints( i->second->GetName() ) );
                 else
-                    CONSOLE_Print( m_OHBot->m_Language->FailedToAddPPoint( ) );
+                    Log->Chat( m_OHBot->m_Language->FailedToAddPPoint( ) );
             }
             else
-                CONSOLE_Print( m_OHBot->m_Language->WrongContactBotOwner( ) );
+                Log->Chat( m_OHBot->m_Language->WrongContactBotOwner( ) );
 
             m_OHBot->m_DB->RecoverCallable( i->second );
             delete i->second;
@@ -838,7 +838,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
         {
             if( GetTicks( ) - i->first > ( m_OHBot->m_VirtualLobbyTime * 1000 ) )
             {
-                CONSOLE_Print( "Deleting a player from a virtual Lobby!" );
+                Log->Info( "Deleting a player from a virtual Lobby!" );
                 i->second->SetDeleteMe( true );
             }
 
@@ -864,7 +864,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
                 else if ( Result != "failed" )
                     SendChat( Player, m_OHBot->m_Language->BetATooHighAmount( Result));
                 else
-                    CONSOLE_Print( "Betsystem have an issue here" );
+                    Log->Write( "Betsystem have an issue here" );
             }
             else if( i->second->GetType() == "top") {
                 if( Result != "failed" )
@@ -879,7 +879,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
                     SendAllChat( m_OHBot->m_Language->WrongContactBotOwner() );
             }
             else
-                CONSOLE_Print( "Unrecognized type was send.");
+                Log->Chat( "Unrecognized type was send.");
 
             m_OHBot->m_DB->RecoverCallable( i->second );
             delete i->second;
@@ -1011,7 +1011,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
         // so rehost it using the current autohost game name
 
         string GameName = m_OHBot->m_AutoHostGameName + " #" + UTIL_ToString( m_HostCounter % 1000 );
-        CONSOLE_Print( "[GAME: " + m_GameName + "] automatically trying to rehost as public game [" + GameName + "] due to refresh failure" );
+        Log->Info( "[GAME: " + m_GameName + "] automatically trying to rehost as public game [" + GameName + "] due to refresh failure" );
         m_LastGameName = m_GameName;
         m_GameName = GameName;
         m_RefreshError = false;
@@ -1201,7 +1201,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
                     else if( m_PartTime == 6 )
                         (*i)->SetFirstActionsForSixthPart( (*i)->GetActions( ) );
                     else
-                        CONSOLE_Print(m_OHBot->m_Language->ErrorForAPMAFKSystem( ));
+                        Log->Write(m_OHBot->m_Language->ErrorForAPMAFKSystem( ));
 
                     if( m_GameLoadedTime >= 300 ) {
                         uint32_t APM = (*i)->GetFirstActionsForFirstPart( )+(*i)->GetFirstActionsForSecondPart( )+(*i)->GetFirstActionsForThirdPart( )+(*i)->GetFirstActionsForFourthPart( )+(*i)->GetFirstActionsForFifthPart( )+(*i)->GetFirstActionsForSixthPart( );
@@ -1318,7 +1318,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
         // so rehost it using the current autohost game name
 
         string GameName = m_OHBot->m_AutoHostGameName + " #" + UTIL_ToString( m_OHBot->GetNewHostCounter( ) );
-        CONSOLE_Print( "[GAME: " + m_GameName + "] automatically trying to rehost as public game [" + GameName + "] due to auto rehost" );
+        Log->Info( "[GAME: " + m_GameName + "] automatically trying to rehost as public game [" + GameName + "] due to auto rehost" );
         m_LastGameName = m_GameName;
         m_GameName = GameName;
         m_RefreshError = false;
@@ -1355,7 +1355,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
 
         if( GetTime( ) - m_LastReservedSeen >= m_OHBot->m_LobbyTimeLimit * 60 )
         {
-            CONSOLE_Print( "[GAME: " + m_GameName + "] is over (lobby time limit hit)" );
+            Log->Info( "[GAME: " + m_GameName + "] is over (lobby time limit hit)" );
             return true;
         }
     }
@@ -1526,7 +1526,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
             {
                 // start the lag screen
 
-                CONSOLE_Print( "[GAME: " + m_GameName + "] started lagging on [" + LaggingString + "]" );
+                Log->Warning( "[GAME: " + m_GameName + "] started lagging on [" + LaggingString + "]" );
                 GAME_Print( 11, "", "", LaggingString, "", "start" );
                 SendAll( m_Protocol->SEND_W3GS_START_LAG( m_Players ) );
 
@@ -1628,7 +1628,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
                 {
                     // stop the lag screen for this player
                     GAME_Print( 11, "", "", (*i)->GetName(), "", "stop" );
-                    CONSOLE_Print( "[GAME: " + m_GameName + "] stopped lagging on [" + (*i)->GetName( ) + "]" );
+                    Log->Info( "[GAME: " + m_GameName + "] stopped lagging on [" + (*i)->GetName( ) + "]" );
                     SendAll( m_Protocol->SEND_W3GS_STOP_LAG( *i ) );
                     (*i)->SetLagging( false );
                     (*i)->SetStartedLaggingTicks( 0 );
@@ -1668,7 +1668,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
 
     if( !m_KickVotePlayer.empty( ) && GetTime( ) - m_StartedKickVoteTime >= 60 )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] votekick against player [" + m_KickVotePlayer + "] expired" );
+        Log->Info( "[GAME: " + m_GameName + "] votekick against player [" + m_KickVotePlayer + "] expired" );
         SendAllChat( m_OHBot->m_Language->VoteKickExpired( m_KickVotePlayer ) );
         m_KickVotePlayer.clear( );
         m_StartedKickVoteTime = 0;
@@ -1678,7 +1678,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
 
     if( m_StartedVoteStartTime != 0 && GetTime( ) - m_StartedVoteStartTime >= 60 && ( !m_GameLoaded || !m_GameLoading) )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] votestart expired" );
+        Log->Info( "[GAME: " + m_GameName + "] votestart expired" );
         SendAllChat( m_OHBot->m_Language->VoteStartExpired( ) );
         m_StartedVoteStartTime = 0;
     }
@@ -1687,7 +1687,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
 
     if( m_Players.size( ) == 1 && m_FakePlayerPID == 255 && m_GameOverTime == 0 && ( m_GameLoading || m_GameLoaded ) )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] gameover timer started (one player left)" );
+        Log->Info( "[GAME: " + m_GameName + "] gameover timer started (one player left)" );
         m_GameOverTime = GetTime( );
         m_OHBot->m_Callables.push_back( m_OHBot->m_DB->Threadedgs( m_HostCounter, string(), 3, uint32_t(), m_GameAlias ) );
     }
@@ -1716,7 +1716,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
 
         if( !AlreadyStopped )
         {
-            CONSOLE_Print( "[GAME: " + m_GameName + "] is over (gameover timer finished)" );
+            Log->Info( "[GAME: " + m_GameName + "] is over (gameover timer finished)" );
             StopPlayers( "was disconnected (gameover timer finished)" );
         }
     }
@@ -1727,7 +1727,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
     {
         if( !m_Saving )
         {
-            CONSOLE_Print( "[GAME: " + m_GameName + "] is over (no players left)" );
+            Log->Info( "[GAME: " + m_GameName + "] is over (no players left)" );
             SaveGameData( );
             m_Saving = true;
             m_OHBot->m_Callables.push_back( m_OHBot->m_DB->Threadedgs( m_HostCounter, string(), 3, uint32_t(), m_GameAlias ) );
@@ -1755,7 +1755,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
             }
             else
             {
-                CONSOLE_Print( "[GAME: " + m_GameName + "] rejected connection from [" + NewSocket->GetIPString( ) + "] due to blacklist" );
+                Log->Info( "[GAME: " + m_GameName + "] rejected connection from [" + NewSocket->GetIPString( ) + "] due to blacklist" );
                 delete NewSocket;
             }
         }
@@ -1885,7 +1885,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
         }
         if( m_DatabaseID > 0 )
         {
-            CONSOLE_Print( "[GAME: " + m_GameName + "] Detailed player statistics can be now parsed on the Statspage." );
+            Log->Info( "[GAME: " + m_GameName + "] Detailed player statistics can be now parsed on the Statspage." );
         }
         m_OHBot->m_DB->RecoverCallable(m_CallableGameDBInit);
         delete m_CallableGameDBInit;
@@ -1996,7 +1996,7 @@ void CBaseGame :: SendAllChat( unsigned char fromPID, string message )
 
     if( GetNumHumanPlayers( ) > 0 )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] [Local]: " + message );
+        Log->Info( "[GAME: " + m_GameName + "] [Local]: " + message );
 
         string MinString = UTIL_ToString( ( m_GameTicks / 1000 ) / 60 );
         string SecString = UTIL_ToString( ( m_GameTicks / 1000 ) % 60 );
@@ -2262,7 +2262,7 @@ void CBaseGame :: SendAllActions( )
         // print a message because even though this will take more resources it should provide some information to the administrator for future reference
         // other solutions - dynamically modify the latency, request higher priority, terminate other games, ???
         //To causes a performance problem, when the console has to say this 1000 times. Should improve ohbot hosting on servers
-        CONSOLE_Print( "[GAME: " + m_GameName + "] warning - the latency is " + UTIL_ToString( m_Latency ) + "ms but the last update was late by " + UTIL_ToString( m_LastActionLateBy ) + "ms" );
+        Log->Warning( "[GAME: " + m_GameName + "] the latency is " + UTIL_ToString( m_Latency ) + "ms but the last update was late by " + UTIL_ToString( m_LastActionLateBy ) + "ms" );
         m_LastActionLateBy = m_Latency;
     }
 
@@ -2432,7 +2432,7 @@ void CBaseGame :: SendVirtualLobbyInfo( CPotentialPlayer *player, CDBBan *Ban, u
 
 void CBaseGame :: EventPlayerDeleted( CGamePlayer *player )
 {
-    CONSOLE_Print( "[GAME: " + m_GameName + "] deleting player [" + player->GetName( ) + "]: " + player->GetLeftReason( ) );
+    Log->Info( "[GAME: " + m_GameName + "] deleting player [" + player->GetName( ) + "]: " + player->GetLeftReason( ) );
 
     // remove any queued spoofcheck messages for this player
 
@@ -2485,7 +2485,7 @@ void CBaseGame :: EventPlayerDeleted( CGamePlayer *player )
     if( m_GameLoaded && player->GetLeftCode( ) == PLAYERLEAVE_DISCONNECT && m_AutoSave )
     {
         string SaveGameName = UTIL_FileSafeName( "GHost++ AutoSave " + m_GameName + " (" + player->GetName( ) + ").w3z" );
-        CONSOLE_Print( "[GAME: " + m_GameName + "] auto saving [" + SaveGameName + "] before player drop, shortened send interval = " + UTIL_ToString( GetTicks( ) - m_LastActionSentTicks ) );
+        Log->Info( "[GAME: " + m_GameName + "] auto saving [" + SaveGameName + "] before player drop, shortened send interval = " + UTIL_ToString( GetTicks( ) - m_LastActionSentTicks ) );
         BYTEARRAY CRC;
         BYTEARRAY Action;
         Action.push_back( 6 );
@@ -2727,7 +2727,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
                 LevelName = m_OHBot->m_Ranks[Level];
 	    }
             else if( Level != 0)
-                CONSOLE_Print(m_OHBot->m_Language->RanksNotLoaded ());
+                Log->Write(m_OHBot->m_Language->RanksNotLoaded ());
             break;
         }
     }
@@ -2739,7 +2739,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
     // check if player is on the deny-vector
     if( IsDenied( joinPlayer->GetName( ), potential->GetExternalIPString( ) ) && Level < 5 )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join but is denied for this game" );
+        Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join but is denied for this game" );
         potential->Send( m_Protocol->SEND_W3GS_REJECTJOIN( REJECTJOIN_FULL ) );
         potential->SetDeleteMe( true );
         return;
@@ -2749,7 +2749,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
     // check if player has only digits
     if( Level == 0 && is_digits( joinPlayer->GetName( ) ) )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join, but he has invalid username (digits only)." );
+        Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join, but he has invalid username (digits only)." );
         potential->Send( m_Protocol->SEND_W3GS_REJECTJOIN( REJECTJOIN_FULL ) );
         potential->SetDeleteMe( true );
         return;
@@ -2757,7 +2757,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
 
     // check if player has a denied word pharse
     if( Level == 0 && HasDeniedWordPharse( joinPlayer->GetName( ) ) && m_OHBot->m_DeniedNamePartials.size( ) != 0 ) {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join but has a forbidden word parse." );
+        Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join but has a forbidden word parse." );
         potential->Send( m_Protocol->SEND_W3GS_REJECTJOIN( REJECTJOIN_FULL ) );
         potential->SetDeleteMe( true );
         return;
@@ -2772,7 +2772,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
     {
         // autoban the player for spoofing name
         m_PairedBanAdds.push_back( PairedBanAdd( "", m_OHBot->m_DB->ThreadedBanAdd( m_OHBot->m_BNETs[0]->GetServer( ), joinPlayer->GetName( ), potential->GetExternalIPString( ), m_GameName, m_OHBot->m_BotManagerName, "attempted to join with spoofed name: " + joinPlayer->GetName( ), 0, "" ) ) );
-        CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game with an invalid name of length " + UTIL_ToString( joinPlayer->GetName( ).size( ) ) );
+        Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game with an invalid name of length " + UTIL_ToString( joinPlayer->GetName( ).size( ) ) );
         DenyPlayer( joinPlayer->GetName( ), potential->GetExternalIPString( ), true);
         potential->Send( m_Protocol->SEND_W3GS_REJECTJOIN( REJECTJOIN_FULL ) );
         potential->SetDeleteMe( true );
@@ -2783,7 +2783,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
 
     if( joinPlayer->GetName( ) == m_VirtualHostName )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game with the virtual host name" );
+        Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game with the virtual host name" );
         DenyPlayer( joinPlayer->GetName( ),potential->GetExternalIPString( ), false );
         potential->Send( m_Protocol->SEND_W3GS_REJECTJOIN( REJECTJOIN_FULL ) );
         potential->SetDeleteMe( true );
@@ -2794,7 +2794,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
 
     if( GetPlayerFromName( joinPlayer->GetName( ), false ) )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game but that name is already taken" );
+        Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game but that name is already taken" );
         // SendAllChat( m_OHBot->m_Language->TryingToJoinTheGameButTaken( joinPlayer->GetName( ) ) );
         if(m_OHBot->m_AutoDenyUsers)
             DenyPlayer( joinPlayer->GetName( ), potential->GetExternalIPString( ),false );
@@ -2806,7 +2806,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
     if( JoinedRealm == m_OHBot->m_WC3ConnectAlias )
     {
         // to spoof this user, we will validate their entry key with our copy in database
-        CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] joining from "+m_OHBot->m_WC3ConnectAlias+"; skey=" + UTIL_ToString( joinPlayer->GetEntryKey( ) ) );
+        Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] joining from "+m_OHBot->m_WC3ConnectAlias+"; skey=" + UTIL_ToString( joinPlayer->GetEntryKey( ) ) );
         m_ConnectChecks.push_back( m_OHBot->m_DB->ThreadedConnectCheck( joinPlayer->GetName( ), joinPlayer->GetEntryKey( ) ) );
     }
 
@@ -2826,7 +2826,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
         {
             // oops!
 
-            CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game over LAN but used an incorrect entry key" );
+            Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game over LAN but used an incorrect entry key" );
             if(m_OHBot->m_AutoDenyUsers)
                 DenyPlayer( joinPlayer->GetName( ),potential->GetExternalIPString( ),false);
             potential->Send( m_Protocol->SEND_W3GS_REJECTJOIN( REJECTJOIN_WRONGPASSWORD ) );
@@ -2849,7 +2849,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
             {
                 if( m_OHBot->m_BanMethod == 1 || m_OHBot->m_BanMethod == 3 )
                 {
-                    CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game but is banned by name" );
+                    Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game but is banned by name" );
                     if( m_IgnoredNames.find( joinPlayer->GetName( ) ) == m_IgnoredNames.end( ) )
                     {
                         SendAllChat( m_OHBot->m_Language->TryingToJoinTheGameButBannedByName( joinPlayer->GetName( ) ) );
@@ -2888,7 +2888,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
             {
                 if( m_OHBot->m_BanMethod == 2 || m_OHBot->m_BanMethod == 3 )
                 {
-                    CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game but is banned by IP address" );
+                    Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game but is banned by IP address" );
 
                     if( m_IgnoredNames.find( joinPlayer->GetName( ) ) == m_IgnoredNames.end( ) )
                     {
@@ -2962,7 +2962,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
 
         if( EnforcePID == 255 || EnforceSlot.GetPID( ) == 255 || EnforceSID >= m_Slots.size( ) )
         {
-            CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game but isn't in the enforced list" );
+            Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is trying to join the game but isn't in the enforced list" );
             if(m_OHBot->m_AutoDenyUsers)
                 DenyPlayer( joinPlayer->GetName( ), potential->GetExternalIPString( ), false );
             potential->Send( m_Protocol->SEND_W3GS_REJECTJOIN( REJECTJOIN_FULL ) );
@@ -3079,7 +3079,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
     // turning the CPotentialPlayer into a CGamePlayer is a bit of a pain because we have to be careful not to close the socket
     // this problem is solved by setting the socket to NULL before deletion and handling the NULL case in the destructor
     // we also have to be careful to not modify the m_Potentials vector since we're currently looping through it
-    CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] joined the game" );
+    Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] joined the game" );
     TempPlayer =  NULL;
     CGamePlayer *Player = new CGamePlayer( potential, EnforcePID!=255 ? EnforcePID : GetNewPID( ), JoinedRealm, joinPlayer->GetName( ), joinPlayer->GetInternalIP( ), Reserved );
 
@@ -3095,7 +3095,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
 
             if( Ban )
             {
-                CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is using a banned name" );
+                Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is using a banned name" );
                 SendAllChat( m_OHBot->m_Language->HasBannedName( joinPlayer->GetName( ) ) );
                 SendAllChat( m_OHBot->m_Language->UserWasBannedOnByBecause( Ban->GetServer( ), Ban->GetName( ), Ban->GetDate( ), Ban->GetAdmin( ), Ban->GetReason( ), Ban->GetExpire( ), Ban->GetMonths( ) ) );
                 if(m_OHBot->m_AutoDenyUsers)
@@ -3107,7 +3107,7 @@ void CBaseGame :: EventPlayerJoined( CPotentialPlayer *potential, CIncomingJoinP
 
             if( IPBan )
             {
-                CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is using a banned IP address" );
+                Log->Info( "[GAME: " + m_GameName + "] player [" + joinPlayer->GetName( ) + "|" + potential->GetExternalIPString( ) + "] is using a banned IP address" );
                 SendAllChat( m_OHBot->m_Language->HasBannedIP( joinPlayer->GetName( ), potential->GetExternalIPString( ), IPBan->GetName( ) ) );
                 SendAllChat( m_OHBot->m_Language->UserWasBannedOnByBecause( IPBan->GetServer( ), IPBan->GetName( ), IPBan->GetDate( ), IPBan->GetAdmin( ), IPBan->GetReason( ), IPBan->GetExpire( ), IPBan->GetMonths( ) ) );
                 if(m_OHBot->m_AutoDenyUsers)
@@ -3356,7 +3356,7 @@ void CBaseGame :: EventPlayerLeft( CGamePlayer *player, uint32_t reason )
 
 void CBaseGame :: EventPlayerLoaded( CGamePlayer *player )
 {
-    CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + player->GetName( ) + "] finished loading in " + UTIL_ToString( (float)( player->GetFinishedLoadingTicks( ) - m_StartedLoadingTicks ) / 1000, 2 ) + " seconds" );
+    Log->Info( "[GAME: " + m_GameName + "] player [" + player->GetName( ) + "] finished loading in " + UTIL_ToString( (float)( player->GetFinishedLoadingTicks( ) - m_StartedLoadingTicks ) / 1000, 2 ) + " seconds" );
 
     player->SetTimeActive( GetTime( ) );
     player->SetActions();
@@ -3498,7 +3498,7 @@ bool CBaseGame :: EventPlayerAction( CGamePlayer *player, CIncomingAction *actio
                     ++n;
 
                     // notify everyone that a player is saving the game
-                    CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + player->GetName( ) + "] is saving the game" );
+                        Log->Info( "[GAME: " + m_GameName + "] player [" + player->GetName( ) + "] is saving the game" );
                     SendAllChat( m_OHBot->m_Language->PlayerIsSavingTheGame( player->GetName( ) ) );
                     break;
                 case 0x07:
@@ -3720,7 +3720,7 @@ void CBaseGame :: EventPlayerKeepAlive( CGamePlayer *player, uint32_t checkSum )
     {
         if( !(*i)->GetDeleteMe( ) && (*i)->GetCheckSums( )->front( ) != FirstCheckSum )
         {
-            CONSOLE_Print( "[GAME: " + m_GameName + "] desync detected" );
+            Log->Info( "[GAME: " + m_GameName + "] desync detected" );
             SendAllChat( m_OHBot->m_Language->DesyncDetected( ) );
 
             // try to figure out who desynced
@@ -3779,13 +3779,13 @@ void CBaseGame :: EventPlayerKeepAlive( CGamePlayer *player, uint32_t checkSum )
                 // however, we still kick every player because it's not fair to pick one or another group
                 // todotodo: it would be possible to split the game at this point and create a "new" game for each game state
 
-                CONSOLE_Print( "[GAME: " + m_GameName + "] can't kick desynced players because there is a tie, kicking all players instead" );
+                Log->Info( "[GAME: " + m_GameName + "] can't kick desynced players because there is a tie, kicking all players instead" );
                 StopPlayers( m_OHBot->m_Language->WasDroppedDesync( ) );
                 AddToReplay = false;
             }
             else
             {
-                CONSOLE_Print( "[GAME: " + m_GameName + "] kicking desynced players" );
+                Log->Info( "[GAME: " + m_GameName + "] kicking desynced players" );
 
                 for( map<uint32_t, vector<unsigned char> > :: iterator j = Bins.begin( ); j != Bins.end( ); ++j )
                 {
@@ -3870,7 +3870,7 @@ void CBaseGame :: EventPlayerChatToHost( CGamePlayer *player, CIncomingChatPlaye
                 unsigned char sid = GetSIDFromPID( chatPlayer->GetFromPID() );
 
 		if( (m_GameLoaded || m_GameLoading) && (msg == "-wtf" || msg == "-test") && m_OHBot->m_RejectingGameCheats) {
-			CONSOLE_Print("[GAME: " + m_GameName + "] (" + MinString + ":" + SecString + ") Rejecting cheat from ["+player->GetName()+"] with message ["+msg+"]");
+            Log->Info("[GAME: " + m_GameName + "] (" + MinString + ":" + SecString + ") Rejecting cheat from ["+player->GetName()+"] with message ["+msg+"]");
 			return;
 		}
 
@@ -3891,7 +3891,7 @@ void CBaseGame :: EventPlayerChatToHost( CGamePlayer *player, CIncomingChatPlaye
                 {
                     // this is an ingame [All] message, print it to the console
 
-                    CONSOLE_Print( "[GAME: " + m_GameName + "] (" + MinString + ":" + SecString + ") [All] [" + player->GetName( ) + "]: " + msg );
+                    Log->Info( "[GAME: " + m_GameName + "] (" + MinString + ":" + SecString + ") [All] [" + player->GetName( ) + "]: " + msg );
                     AppendLogData("5\tall\t" +  player->GetName() + "\t-\t-\t-\t" + MinString + ":" + SecString + "\t" + msg + "\n");
                     GAME_Print( 7, MinString, SecString, player->GetName( ), "", msg );
                     // don't relay ingame messages targeted for all players if we're currently muting all
@@ -3904,7 +3904,7 @@ void CBaseGame :: EventPlayerChatToHost( CGamePlayer *player, CIncomingChatPlaye
                 {
                     // this is an ingame [Obs/Ref] message, print it to the console
 
-                    CONSOLE_Print( "[GAME: " + m_GameName + "] (" + MinString + ":" + SecString + ") [Obs/Ref] [" + player->GetName( ) + "]: " + msg );
+                    Log->Info( "[GAME: " + m_GameName + "] (" + MinString + ":" + SecString + ") [Obs/Ref] [" + player->GetName( ) + "]: " + msg );
                     GAME_Print( 8, MinString, SecString, player->GetName( ), "", msg );
                 }
 
@@ -3925,7 +3925,7 @@ void CBaseGame :: EventPlayerChatToHost( CGamePlayer *player, CIncomingChatPlaye
                 {
                     // this is a lobby message, print it to the console
 
-                    CONSOLE_Print( "[GAME: " + m_GameName + "] [Lobby] [" + player->GetName( ) + "]: " + msg );
+                    Log->Info( "[GAME: " + m_GameName + "] [Lobby] [" + player->GetName( ) + "]: " + msg );
                     // Hide password protection
                     string LMessage = msg;
                     if( ( LMessage.substr( 1, 1 ) != "p" && LMessage.substr( 1, 4) != "ping" ) && LMessage.substr( 1, 2 ) != "ac" && LMessage.substr( 1, 3 ) != "reg" && LMessage.substr( 1, 7 ) != "confirm" )
@@ -4152,7 +4152,7 @@ void CBaseGame :: EventPlayerDropRequest( CGamePlayer *player )
 
     if( m_Lagging )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] player [" + player->GetName( ) + "] voted to drop laggers" );
+        Log->Info( "[GAME: " + m_GameName + "] player [" + player->GetName( ) + "] voted to drop laggers" );
         SendAllChat( m_OHBot->m_Language->PlayerVotedToDropLaggers( player->GetName( ) ) );
 
         // check if at least half the players voted to drop
@@ -4195,7 +4195,7 @@ void CBaseGame :: EventPlayerMapSize( CGamePlayer *player, CIncomingMapSize *map
                     {
                         // inform the client that we are willing to send the map
 
-                        CONSOLE_Print( "[GAME: " + m_GameName + "] map download started for player [" + player->GetName( ) + "]" );
+                        Log->Info( "[GAME: " + m_GameName + "] map download started for player [" + player->GetName( ) + "]" );
                         Send( player, m_Protocol->SEND_W3GS_STARTDOWNLOAD( GetHostPID( ) ) );
                         player->SetDownloadStarted( true );
                         player->SetStartedDownloadingTicks( GetTicks( ) );
@@ -4228,7 +4228,7 @@ void CBaseGame :: EventPlayerMapSize( CGamePlayer *player, CIncomingMapSize *map
 
             float Seconds = (float)( GetTicks( ) - player->GetStartedDownloadingTicks( ) ) / 1000;
             float Rate = (float)MapSize / 1024 / Seconds;
-            CONSOLE_Print( "[GAME: " + m_GameName + "] map download finished for player [" + player->GetName( ) + "] in " + UTIL_ToString( Seconds, 1 ) + " seconds" );
+            Log->Info( "[GAME: " + m_GameName + "] map download finished for player [" + player->GetName( ) + "] in " + UTIL_ToString( Seconds, 1 ) + " seconds" );
             SendAllChat( m_OHBot->m_Language->PlayerDownloadedTheMap( player->GetName( ), UTIL_ToString( Seconds, 1 ), UTIL_ToString( Rate, 1 ) ) );
             player->SetDownloadFinished( true );
             player->SetFinishedDownloadingTime( GetTime( ) );
@@ -4297,7 +4297,7 @@ void CBaseGame :: EventGameRefreshed( string server )
 void CBaseGame :: EventGameStarted( )
 {
     GAME_Print( 10, "", "", "System", "", "started loading with " + UTIL_ToString( GetNumHumanPlayers( ) ) + " players." );
-    CONSOLE_Print( "[GAME: " + m_GameName + "] started loading with " + UTIL_ToString( GetNumHumanPlayers( ) ) + " players" );
+    Log->Info( "[GAME: " + m_GameName + "] started loading with " + UTIL_ToString( GetNumHumanPlayers( ) ) + " players" );
 
     // encode the HCL command string in the slot handicaps
     // here's how it works:
@@ -4347,13 +4347,13 @@ void CBaseGame :: EventGameStarted( )
                 }
 
                 SendAllSlotInfo( );
-                CONSOLE_Print( "[GAME: " + m_GameName + "] successfully encoded HCL command string [" + m_HCLCommandString + "]" );
+                Log->Info( "[GAME: " + m_GameName + "] successfully encoded HCL command string [" + m_HCLCommandString + "]" );
             }
             else
-                CONSOLE_Print( "[GAME: " + m_GameName + "] encoding HCL command string [" + m_HCLCommandString + "] failed because it contains invalid characters" );
+                Log->Info( "[GAME: " + m_GameName + "] encoding HCL command string [" + m_HCLCommandString + "] failed because it contains invalid characters" );
         }
         else
-            CONSOLE_Print( "[GAME: " + m_GameName + "] encoding HCL command string [" + m_HCLCommandString + "] failed because there aren't enough occupied slots" );
+            Log->Info( "[GAME: " + m_GameName + "] encoding HCL command string [" + m_HCLCommandString + "] failed because there aren't enough occupied slots" );
     }
 
     // send a final slot info update if necessary
@@ -4517,7 +4517,7 @@ void CBaseGame :: EventGameLoaded( )
     // UPDATE STATUS
     m_OHBot->m_Callables.push_back( m_OHBot->m_DB->Threadedgs( m_HostCounter, string(),  2, uint32_t(), m_GameAlias ) );
 
-    CONSOLE_Print( "[GAME: " + m_GameName + "] finished loading with " + UTIL_ToString( GetNumHumanPlayers( ) ) + " players" );
+    Log->Info( "[GAME: " + m_GameName + "] finished loading with " + UTIL_ToString( GetNumHumanPlayers( ) ) + " players" );
 
     // send shortest, longest, and personal load times to each player
 
@@ -5317,7 +5317,7 @@ void CBaseGame :: OHFixedBalance( )
     //Main beginning
     if( !( m_Map->GetMapOptions( ) & MAPOPT_FIXEDPLAYERSETTINGS ) )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] error balancing slots - can't balance slots without fixed player settings" );
+        Log->Info( "[GAME: " + m_GameName + "] error balancing slots - can't balance slots without fixed player settings" );
         return;
     }
 
@@ -5332,7 +5332,7 @@ void CBaseGame :: OHFixedBalance( )
             if((*i)->GetGames( ) > 0 )
                 Win = ((*i)->GetScore( ) / (*i)->GetGames( ));
 
-            CONSOLE_Print( "Name: " + (*i)->GetName() + " | Win Points: " + UTIL_ToString( Win ) );
+            Log->Info( "Name: " + (*i)->GetName() + " | Win Points: " + UTIL_ToString( Win ) );
             totalwinpoints += Win;
             PlayerWins.push_back( Win );
         }
@@ -5345,7 +5345,7 @@ void CBaseGame :: OHFixedBalance( )
 
     if( k == 0 )
     {
-        CONSOLE_Print( "Error, no players left" );
+        Log->Info( "Error, no players left" );
     }
     uint32_t counter = 0;
     double BestSpread = 100;
@@ -5388,9 +5388,9 @@ void CBaseGame :: OHFixedBalance( )
 
                                         if( CurrentSpread < BestSpread )
                                         {
-                                            CONSOLE_Print("[OHBalance] Found a new best order: [Comb #" + UTIL_ToString( counter ) + "]" );
-                                            CONSOLE_Print("[OHBalance] [P"+UTIL_ToString(z)+": "+UTIL_ToString(*a, 2)+"] [P"+UTIL_ToString(y)+": "+UTIL_ToString(*b, 2)+"] [P"+UTIL_ToString(x)+": "+UTIL_ToString(*c, 2)+"] [P"+UTIL_ToString(v)+": "+UTIL_ToString(*d, 2)+"] [P"+UTIL_ToString(w)+": "+UTIL_ToString(*e, 2)+"]" );
-                                            CONSOLE_Print("[OHBalance] [WinPerc: "+UTIL_ToString( result, 2 ) + "] [New Best Spread: " + UTIL_ToString( CurrentSpread, 2 ) + "] [Old Best Spread: " +  UTIL_ToString( BestSpread, 2 ) + "]" );
+                                            Log->Info("[OHBalance] Found a new best order: [Comb #" + UTIL_ToString( counter ) + "]" );
+                                            Log->Info("[OHBalance] [P"+UTIL_ToString(z)+": "+UTIL_ToString(*a, 2)+"] [P"+UTIL_ToString(y)+": "+UTIL_ToString(*b, 2)+"] [P"+UTIL_ToString(x)+": "+UTIL_ToString(*c, 2)+"] [P"+UTIL_ToString(v)+": "+UTIL_ToString(*d, 2)+"] [P"+UTIL_ToString(w)+": "+UTIL_ToString(*e, 2)+"]" );
+                                            Log->Info("[OHBalance] [WinPerc: "+UTIL_ToString( result, 2 ) + "] [New Best Spread: " + UTIL_ToString( CurrentSpread, 2 ) + "] [Old Best Spread: " +  UTIL_ToString( BestSpread, 2 ) + "]" );
                                             BestSpread = CurrentSpread;
                                             BestOrder.clear( );
                                             BestOrder.push_back( *a );
@@ -5416,7 +5416,7 @@ void CBaseGame :: OHFixedBalance( )
     }
 
     uint32_t EndTicks = GetTicks( );
-    CONSOLE_Print( "Checked " + UTIL_ToString( counter ) + " possible combinations in " + UTIL_ToString( EndTicks-StartTicks ) + "ms." );
+    Log->Info( "Checked " + UTIL_ToString( counter ) + " possible combinations in " + UTIL_ToString( EndTicks-StartTicks ) + "ms." );
 
     if( !BestOrder.empty() )
     {
@@ -5435,7 +5435,7 @@ void CBaseGame :: OHFixedBalance( )
 
                         if( (g) != oldpid )
                         {
-                            CONSOLE_Print( "Swapping [" + UTIL_ToString( oldpid ) + "] to [" + UTIL_ToString( g ) + "]" );
+                            Log->Info( "Swapping [" + UTIL_ToString( oldpid ) + "] to [" + UTIL_ToString( g ) + "]" );
                             SwapSlots( (unsigned char)oldpid, (unsigned char)g );
                         }
                     }
@@ -5480,7 +5480,7 @@ void CBaseGame :: OHFixedBalance( )
 
                             if( (g) != oldpid )
                             {
-                                CONSOLE_Print( "Swapping [" + UTIL_ToString( oldpid ) + "] to [" + UTIL_ToString( g ) + "]" );
+                                Log->Info( "Swapping [" + UTIL_ToString( oldpid ) + "] to [" + UTIL_ToString( g ) + "]" );
                                 SwapSlots( (unsigned char)oldpid, (unsigned char)g );
                             }
                         }
@@ -5544,7 +5544,7 @@ void CBaseGame :: BalanceSlots( )
 {
     if( !( m_Map->GetMapOptions( ) & MAPOPT_FIXEDPLAYERSETTINGS ) )
     {
-        CONSOLE_Print( "[GAME: " + m_GameName + "] error balancing slots - can't balance slots without fixed player settings" );
+        Log->Info( "[GAME: " + m_GameName + "] error balancing slots - can't balance slots without fixed player settings" );
         return;
     }
 
@@ -5623,7 +5623,7 @@ void CBaseGame :: BalanceSlots( )
         // the cost is too high, don't run the algorithm
         // a possible alternative: stop after enough iterations and/or time has passed
 
-        CONSOLE_Print( "[GAME: " + m_GameName + "] shuffling slots instead of balancing - the algorithm is too slow (with a cost of " + UTIL_ToString( AlgorithmCost ) + ") for this team configuration" );
+        Log->Info( "[GAME: " + m_GameName + "] shuffling slots instead of balancing - the algorithm is too slow (with a cost of " + UTIL_ToString( AlgorithmCost ) + ") for this team configuration" );
         SendAllChat( m_OHBot->m_Language->ShufflingPlayers( ) );
         ShuffleSlots( );
         return;
@@ -5674,7 +5674,7 @@ void CBaseGame :: BalanceSlots( )
             }
             else
             {
-                CONSOLE_Print( "[GAME: " + m_GameName + "] shuffling slots instead of balancing - the balancing algorithm tried to do an invalid swap (this shouldn't happen)" );
+                Log->Info( "[GAME: " + m_GameName + "] shuffling slots instead of balancing - the balancing algorithm tried to do an invalid swap (this shouldn't happen)" );
                 SendAllChat( m_OHBot->m_Language->ShufflingPlayers( ) );
                 ShuffleSlots( );
                 return;
@@ -5685,7 +5685,7 @@ void CBaseGame :: BalanceSlots( )
         }
     }
 
-    CONSOLE_Print( "[GAME: " + m_GameName + "] balancing slots completed in " + UTIL_ToString( EndTicks - StartTicks ) + "ms (with a cost of " + UTIL_ToString( AlgorithmCost ) + ")" );
+    Log->Info( "[GAME: " + m_GameName + "] balancing slots completed in " + UTIL_ToString( EndTicks - StartTicks ) + "ms (with a cost of " + UTIL_ToString( AlgorithmCost ) + ")" );
     SendAllChat( m_OHBot->m_Language->BalancingSlotsCompleted( ) );
     SendAllSlotInfo( );
 
@@ -5974,7 +5974,7 @@ void CBaseGame :: StartCountDown( bool force )
                     }
                     return;
                 } else {
-                    CONSOLE_Print( "[ERROR] Mode Voting was enabled but didn't found any modes to vote.");
+                    Log->Write( "Mode Voting was enabled but didn't found any modes to vote.");
                 }
             }
             // if no problems found start the game
@@ -6108,7 +6108,7 @@ void CBaseGame :: StartCountDownAuto( bool requireSpoofChecks )
                 }
                 return;
             } else {
-                CONSOLE_Print( "[ERROR] Mode Voting was enabled but didn't found any modes to vote.");
+                Log->Write( "Mode Voting was enabled but didn't found any modes to vote.");
             }
         }
 
@@ -6369,7 +6369,7 @@ void CBaseGame :: GAME_Print( uint32_t type, string MinString, string SecString,
 	    sendPack = "["+GTime+"] "+Player1+" "+message+"ed lagging.";
 	}
         else
-            CONSOLE_Print( "Invalid gameprint packet sent: "+UTIL_ToString(type)+": "+message );
+            Log->Write( "Invalid gameprint packet sent: "+UTIL_ToString(type)+": "+message );
 
         m_GameLog.push_back( StorePacket );
     }
@@ -6480,7 +6480,7 @@ void CBaseGame :: GAME_Print( uint32_t type, string MinString, string SecString,
             else if( message == "succ" )
                 StorePacket = "<div class=\'system\'><span class=\'time\'>"+GTime+"</span><a href=\'?u="+Player1+"\'><span class=\'slot"+PSiD+"\'>"+Player1+"</span></a> successfully swapped with <a href=\'?u="+Player2+"\'><span class=\'slot"+VSiD+"\'>"+Player2+"</span></a></div>";
             else
-                CONSOLE_Print( "Unknown Swap Packet was send: " + message );
+                Log->Write( "Unknown Swap Packet was send: " + message );
         }
         else if( type == 26 )
             StorePacket = "<div class=\'system\'><span class=\'time\'>"+GTime+"</span><span class=\'scourge\'>Scourge\'s</span> Throne is now on "+message+"%.</div>";
@@ -6495,7 +6495,7 @@ void CBaseGame :: GAME_Print( uint32_t type, string MinString, string SecString,
             else if( message == "drop" )
                 StorePacket = "<div class=\'system\'><span class=\'time\'>"+GTime+"</span><a href=\'?u="+Player1+"\'><span class=\'slot"+PSiD+"\'>"+Player1+"</span></a> dropped Aegis.</div>";
             else
-                CONSOLE_Print( "Unknown Aegis Packet was send: " + message );
+                Log->Write( "Unknown Aegis Packet was send: " + message );
         }
         else if( type == 30 || type == 31 )
         {
@@ -6513,7 +6513,7 @@ void CBaseGame :: GAME_Print( uint32_t type, string MinString, string SecString,
 	    else if( message == "6" )
 		Rune = "Booster";
             else
-                CONSOLE_Print( "Bad Input for RuneType: "+message );
+                Log->Write( "Bad Input for RuneType: "+message );
 
             if( type == 30 )
                 StorePacket = "<div class='system'><span class='time'>"+GTime+"</span><a href='?u="+Player1+"'><span class='slot"+PSiD+"'>"+Player1+"</span></a> stored a <span class='rune'>"+Rune+"</span> Rune.</div>";
@@ -6521,12 +6521,12 @@ void CBaseGame :: GAME_Print( uint32_t type, string MinString, string SecString,
                 StorePacket = "<div class='system'><span class='time'>"+GTime+"</span><a href='?u="+Player1+"'><span class='slot"+PSiD+"'>"+Player1+"</span></a> used a <span class='rune'>"+Rune+"</span> Rune.</div>";
         }
         else
-            CONSOLE_Print( "Invalid gameprint packet sent: "+UTIL_ToString(type)+": "+message );
+            Log->Write( "Invalid gameprint packet sent: "+UTIL_ToString(type)+": "+message );
 
         m_GameLog.push_back( StorePacket );
     }
     else
-        CONSOLE_Print( "Invalid gameprint packet sent: "+UTIL_ToString(type)+": "+message );
+        Log->Write( "Invalid gameprint packet sent: "+UTIL_ToString(type)+": "+message );
 }
 
 void CBaseGame :: AnnounceEvent( uint32_t RandomNumber )
@@ -6552,7 +6552,7 @@ void CBaseGame :: AnnounceEvent( uint32_t RandomNumber )
         } else
             SendAllChat( m_OHBot->m_Language->Announcement()+" "+m_OHBot->m_Announces[RandomNumber] );
     } else {
-        CONSOLE_Print("[Error] Announce event failed, make sure you have set an announce.");
+        Log->Write("Announce event failed, make sure you have set an announce.");
     }
 }
 

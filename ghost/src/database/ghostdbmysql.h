@@ -320,7 +320,7 @@ public:
         if(i != COHBotDBMySQL::outstandingCalls.end())
                 i->second = i->second-1;
  	else
-		DEBUG_Print("[MYSQL_DEBUG] Unknown Callable got recovered: " + m_CallableName );
+		Log->Debug("[MYSQL_DEBUG] Unknown Callable got recovered: " + m_CallableName );
     }
 
     virtual void *GetConnection( )	{

@@ -29,7 +29,7 @@ ifeq ($(SYSTEM),Darwin)
 CFLAGS += -I../database/mysql/include/
 endif
 
-OBJS = utils/bncsutilinterface.o bnet/bnet.o bnet/bnetprotocol.o bnls/bnlsclient.o bnls/bnlsprotocol.o network/commandpacket.o network/utils.o config.o utils/crc32.o game/game.o game/game_base.o game/gameplayer.o game/gameprotocol.o game/gameslot.o garena/gcbiprotocol.o ohbot.o database/ghostdb.o database/ghostdbmysql.o gproxy/gpsprotocol.o language.o map.o utils/packed.o replay.o savegame.o utils/sha1.o network/socket.o stats/stats.o stats/statsdota.o stats/statsw3mmd.o utils/util.o
+OBJS = utils/bncsutilinterface.o bnet/bnet.o bnet/bnetprotocol.o bnls/bnlsclient.o bnls/bnlsprotocol.o network/commandpacket.o network/utils.o config.o utils/crc32.o game/game.o game/game_base.o game/gameplayer.o game/gameprotocol.o game/gameslot.o garena/gcbiprotocol.o ohbot.o database/ghostdb.o database/ghostdbmysql.o gproxy/gpsprotocol.o language.o map.o replay/packed.o replay/replay.o replay/savegame.o utils/sha1.o network/socket.o stats/stats.o stats/statsdota.o stats/statsw3mmd.o utils/util.o
 COBJS =
 PROGS = ./ohs++
 
@@ -52,7 +52,7 @@ $(COBJS): %.o: %.c
 all: $(PROGS)
 
 utils/bncsutilinterface.o: ohbot.h includes.h utils/util.h utils/bncsutilinterface.h
-bnet/bnet.o: ohbot.h includes.h utils/util.h config.h language.h network/socket.h network/commandpacket.h database/ghostdb.h utils/bncsutilinterface.h bnls/bnlsclient.h bnet/bnetprotocol.h bnet/bnet.h map.h utils/packed.h savegame.h replay.h game/gameprotocol.h game/game_base.h
+bnet/bnet.o: ohbot.h includes.h utils/util.h config.h language.h network/socket.h network/commandpacket.h database/ghostdb.h utils/bncsutilinterface.h bnls/bnlsclient.h bnet/bnetprotocol.h bnet/bnet.h map.h replay/packed.h replay/savegame.h replay/replay.h game/gameprotocol.h game/game_base.h
 bnet/bnetprotocol.o: ohbot.h includes.h utils/util.h bnet/bnetprotocol.h
 bnls/bnlsclient.o: ohbot.h includes.h utils/util.h network/socket.h network/commandpacket.h bnls/bnlsprotocol.h bnls/bnlsclient.h
 bnls/bnlsprotocol.o: ohbot.h includes.h utils/util.h bnls/bnlsprotocol.h
@@ -60,21 +60,21 @@ network/commandpacket.o: ohbot.h includes.h network/commandpacket.h
 network/utils.o: ohbot.h utils/util.h network/socket.h
 config.o: ohbot.h includes.h config.h
 utils/crc32.o: ohbot.h includes.h utils/crc32.h
-game/game.o: ohbot.h includes.h utils/util.h config.h language.h network/socket.h database/ghostdb.h bnet/bnet.h map.h utils/packed.h savegame.h game/gameplayer.h game/gameprotocol.h game/game_base.h game/game.h stats/stats.h stats/statsdota.h stats/statsw3mmd.h
-game/game_base.o: ohbot.h includes.h utils/util.h config.h language.h network/socket.h database/ghostdb.h bnet/bnet.h map.h utils/packed.h savegame.h replay.h game/gameplayer.h game/gameprotocol.h game/game_base.h utils/next_combination.h
+game/game.o: ohbot.h includes.h utils/util.h config.h language.h network/socket.h database/ghostdb.h bnet/bnet.h map.h replay/packed.h replay/savegame.h game/gameplayer.h game/gameprotocol.h game/game_base.h game/game.h stats/stats.h stats/statsdota.h stats/statsw3mmd.h
+game/game_base.o: ohbot.h includes.h utils/util.h config.h language.h network/socket.h database/ghostdb.h bnet/bnet.h map.h replay/packed.h replay/savegame.h replay/replay.h game/gameplayer.h game/gameprotocol.h game/game_base.h utils/next_combination.h
 game/gameplayer.o: ohbot.h includes.h utils/util.h language.h network/socket.h network/commandpacket.h bnet/bnet.h map.h game/gameplayer.h game/gameprotocol.h gproxy/gpsprotocol.h game/game_base.h garena/gcbiprotocol.h
 game/gameprotocol.o: ohbot.h includes.h utils/util.h utils/crc32.h game/gameplayer.h game/gameprotocol.h game/game_base.h
 game/gameslot.o: ohbot.h includes.h game/gameslot.h
 garena/gcbiprotocol.o: garena/gcbiprotocol.h ohbot.h utils/util.h
-ghost.o: ohbot.h includes.h utils/util.h utils/crc32.h utils/sha1.h config.h language.h network/socket.h database/ghostdb.h database/ghostdbmysql.h bnet/bnet.h map.h utils/packed.h savegame.h game/gameplayer.h game/gameprotocol.h gproxy/gpsprotocol.h network/utils.h game/game_base.h game/game.h garena/gcbiprotocol.h
+ghost.o: ohbot.h includes.h utils/util.h utils/crc32.h utils/sha1.h config.h language.h network/socket.h database/ghostdb.h database/ghostdbmysql.h bnet/bnet.h map.h replay/packed.h replay/savegame.h game/gameplayer.h game/gameprotocol.h gproxy/gpsprotocol.h network/utils.h game/game_base.h game/game.h garena/gcbiprotocol.h
 database/ghostdb.o: ohbot.h includes.h utils/util.h config.h database/ghostdb.h
 database/ghostdbmysql.o: ohbot.h includes.h utils/util.h config.h database/ghostdb.h database/ghostdbmysql.h
 gproxy/gpsprotocol.o: ohbot.h utils/util.h gproxy/gpsprotocol.h
 language.o: ohbot.h includes.h config.h language.h
 map.o: ohbot.h includes.h utils/util.h utils/crc32.h utils/sha1.h config.h map.h
-utils/packed.o: ohbot.h includes.h utils/util.h utils/crc32.h utils/packed.h
-replay.o: ohbot.h includes.h utils/util.h utils/packed.h replay.h game/gameprotocol.h
-savegame.o: ohbot.h includes.h utils/util.h utils/packed.h savegame.h
+replay/packed.o: ohbot.h includes.h utils/util.h utils/crc32.h replay/packed.h
+replay/replay.o: ohbot.h includes.h utils/util.h replay/packed.h replay/replay.h game/gameprotocol.h
+replay/savegame.o: ohbot.h includes.h utils/util.h replay/packed.h replay/savegame.h
 utils/sha1.o: utils/sha1.h
 network/socket.o: ohbot.h includes.h utils/util.h network/socket.h
 stats/stats.o: ohbot.h includes.h stats/stats.h

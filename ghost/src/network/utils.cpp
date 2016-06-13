@@ -23,20 +23,20 @@ void GetLocalAddresses(vector<BYTEARRAY> *vec){
     SOCKET sd = WSASocket(AF_INET, SOCK_DGRAM, 0, 0, 0, 0);
 
     if (sd == SOCKET_ERROR)
-        CONSOLE_Print("[GHOST] error finding local IP addresses - failed to create socket (error code " + UTIL_ToString(WSAGetLastError()) + ")");
+        Log->Write("[GHOST] error finding local IP addresses - failed to create socket (error code " + UTIL_ToString(WSAGetLastError()) + ")");
     else {
         INTERFACE_INFO InterfaceList[20];
         unsigned long nBytesReturned;
 
         if (WSAIoctl(sd, SIO_GET_INTERFACE_LIST, 0, 0, &InterfaceList, sizeof(InterfaceList), &nBytesReturned, 0, 0) == SOCKET_ERROR)
-            CONSOLE_Print("[GHOST] error finding local IP addresses - WSAIoctl failed (error code " + UTIL_ToString(WSAGetLastError()) + ")");
+            Log->Write("[GHOST] error finding local IP addresses - WSAIoctl failed (error code " + UTIL_ToString(WSAGetLastError()) + ")");
         else {
             int nNumInterfaces = nBytesReturned / sizeof(INTERFACE_INFO);
 
             for (int i = 0; i < nNumInterfaces; ++i) {
                 sockaddr_in *pAddress;
                 pAddress = (sockaddr_in * ) & (InterfaceList[i].iiAddress);
-                CONSOLE_Print("[GHOST] local IP address #" + UTIL_ToString(i + 1) + " is [" + string(inet_ntoa(pAddress->sin_addr)) + "]");
+                Log->Write("[GHOST] local IP address #" + UTIL_ToString(i + 1) + " is [" + string(inet_ntoa(pAddress->sin_addr)) + "]");
                 vec->push_back(UTIL_CreateByteArray((uint32_t) pAddress->sin_addr.s_addr, false));
             }
         }
@@ -49,21 +49,21 @@ void GetLocalAddresses(vector<BYTEARRAY> *vec){
     char HostName[255];
 
     if( gethostname( HostName, 255 ) == SOCKET_ERROR )
-        CONSOLE_Print( "[GHOST] error finding local IP addresses - failed to get local hostname" );
+        Log->Write( "[GHOST] error finding local IP addresses - failed to get local hostname" );
     else
     {
-        CONSOLE_Print( "[GHOST] local hostname is [" + string( HostName ) + "]" );
+        Log->Info( "[GHOST] local hostname is [" + string( HostName ) + "]" );
         struct hostent *HostEnt = gethostbyname( HostName );
 
         if( !HostEnt )
-            CONSOLE_Print( "[GHOST] error finding local IP addresses - gethostbyname failed" );
+            Log->Write( "[GHOST] error finding local IP addresses - gethostbyname failed" );
         else
         {
             for( int i = 0; HostEnt->h_addr_list[i] != NULL; ++i )
             {
                 struct in_addr Address;
                 memcpy( &Address, HostEnt->h_addr_list[i], sizeof(struct in_addr) );
-                CONSOLE_Print( "[GHOST] local IP address #" + UTIL_ToString( i + 1 ) + " is [" + string( inet_ntoa( Address ) ) + "]" );
+                Log->Info( "[GHOST] local IP address #" + UTIL_ToString( i + 1 ) + " is [" + string( inet_ntoa( Address ) ) + "]" );
                 vec->push_back( UTIL_CreateByteArray( (uint32_t)Address.s_addr, false ) );
             }
         }

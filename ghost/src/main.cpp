@@ -43,12 +43,12 @@ void dumpstack(void){
     int levels = backtrace( backbuf, 50 );
     char** strings = backtrace_symbols(backbuf, levels);
 
-    CONSOLE_Print("<DUMPSTACK>");
+    Log->Debug("<DUMPSTACK>");
 
     for(int i = 0; i < levels; i++)
-        CONSOLE_Print(strings[i]);
+        Log->Debug(strings[i]);
 
-    CONSOLE_Print("</DUMPSTACK>");
+    Log->Debug("</DUMPSTACK>");
 
     return;
 }
@@ -67,7 +67,7 @@ void SignalSIGILL( int s ) {
 #endif
 void SignalCatcher2( int s )
 {
-    CONSOLE_Print( "[!!!] caught signal " + UTIL_ToString( s ) + ", exiting NOW" );
+    Log->Warning( "[!!!] caught signal " + UTIL_ToString( s ) + ", exiting NOW" );
 
     if( gGHost )
     {
@@ -85,7 +85,7 @@ void SignalCatcher( int s )
     // signal( SIGABRT, SignalCatcher2 );
     signal( SIGINT, SignalCatcher2 );
 
-    CONSOLE_Print( "[!!!] caught signal " + UTIL_ToString( s ) + ", exiting nicely" );
+    Log->Info( "[!!!] caught signal " + UTIL_ToString( s ) + ", exiting nicely" );
 
     if( gGHost )
         gGHost->m_ExitingNice = true;
@@ -158,15 +158,15 @@ int main( int argc, char **argv )
             break;
         }
         else if( i < 5 )
-            CONSOLE_Print( "[GHOST] error setting Windows timer resolution to " + UTIL_ToString( i ) + " milliseconds, trying a higher resolution" );
+            Log->Write( "[GHOST] error setting Windows timer resolution to " + UTIL_ToString( i ) + " milliseconds, trying a higher resolution" );
         else
         {
-            CONSOLE_Print( "[GHOST] error setting Windows timer resolution" );
+            Log->Write( "[GHOST] error setting Windows timer resolution" );
             return 1;
         }
     }
 
-    CONSOLE_Print( "[GHOST] using Windows timer with resolution " + UTIL_ToString( TimerResolution ) + " milliseconds" );
+    Log->Info( "[GHOST] using Windows timer with resolution " + UTIL_ToString( TimerResolution ) + " milliseconds" );
 #elif __APPLE__
     // not sure how to get the resolution
 #else
@@ -183,18 +183,18 @@ int main( int argc, char **argv )
 #ifdef WIN32
     // initialize winsock
 
-    CONSOLE_Print( "[GHOST] starting winsock" );
+    Log->Info( "[GHOST] starting winsock" );
     WSADATA wsadata;
 
     if( WSAStartup( MAKEWORD( 2, 2 ), &wsadata ) != 0 )
     {
-        CONSOLE_Print( "[GHOST] error starting winsock" );
+        Log->Write( "[GHOST] error starting winsock" );
         return 1;
     }
 
     // increase process priority
 
-    CONSOLE_Print( "[GHOST] setting process priority to \"above normal\"" );
+    Log->Info( "[GHOST] setting process priority to \"above normal\"" );
     SetPriorityClass( GetCurrentProcess( ), ABOVE_NORMAL_PRIORITY_CLASS );
 #endif
     // initialize ohbot
@@ -218,7 +218,7 @@ int main( int argc, char **argv )
 #ifdef WIN32
     // shutdown winsock
 
-    CONSOLE_Print( "[GHOST] shutting down winsock" );
+    Log->Info( "[GHOST] shutting down winsock" );
     WSACleanup( );
 
     // shutdown timer

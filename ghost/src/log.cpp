@@ -127,32 +127,32 @@ CLog* CLog :: Write( const string sMessage, unsigned char writeMode )
     if ( writeMode & LOG_ERROR ){
         // skip file writing if error logging is disabled
         if( !mode & LOG_ERROR )
-            writeMode = LOG_COUT_ONLY;
+            writeMode = LOG_COUT;
 
         fMessage = string("[ERROR] ");
     }
     else if ( writeMode & LOG_WARNING ){
         // skip file writing if warning logging is disabled
         if( !mode & LOG_WARNING )
-            writeMode = LOG_COUT_ONLY;
+            writeMode = LOG_COUT;
 
         fMessage = string("[WARNG] ");
     }
     else if ( writeMode & LOG_DEBUG ){
         // skip file writing if debug logging is disabled
         if( !mode & LOG_DEBUG )
-            writeMode = LOG_COUT_ONLY;
+            writeMode = LOG_COUT;
 
         fMessage = string("[DEBUG] ");
     }
 
     // Print to stdout?
-    if ( !writeMode & LOG_FILE_ONLY ) {
+    if ( writeMode & LOG_COUT ) {
         cout << fMessage << sMessage << endl;
     }
 
     // Log File valid ?
-    else if( (!writeMode & LOG_COUT_ONLY) && (!mode & LOG_FILE_INVALID) )
+    else if( (writeMode & LOG_FILE) && (!mode & LOG_FILE_INVALID) )
     {
         // write and flush opened logfile
         if( mode & LOG_KEEPOPENED && fileStream && !fileStream->fail( ) ) {

@@ -74,7 +74,7 @@ COHBotDBMySQL :: COHBotDBMySQL( CConfig *CFG ) : COHBotDB( CFG )
 
     if( !( Connection = mysql_init( NULL ) ) )
     {
-        CONSOLE_Print( string( "[MYSQL] " ) + mysql_error( Connection ) );
+        Log->Write( string( "[MYSQL] " ) + mysql_error( Connection ) );
         m_HasError = true;
         m_Error = "error initializing MySQL connection";
         return;
@@ -85,7 +85,7 @@ COHBotDBMySQL :: COHBotDBMySQL( CConfig *CFG ) : COHBotDB( CFG )
 
     if( !( mysql_real_connect( Connection, m_Server.c_str( ), m_User.c_str( ), m_Password.c_str( ), m_Database.c_str( ), m_Port, NULL, 0 ) ) )
     {
-        CONSOLE_Print( string( "[MYSQL] " ) + mysql_error( Connection ) );
+        Log->Write( string( "[MYSQL] " ) + mysql_error( Connection ) );
         m_HasError = true;
         m_Error = "error connecting to MySQL server";
         return;
@@ -98,7 +98,7 @@ COHBotDBMySQL :: ~COHBotDBMySQL( )
 {
     boost::mutex::scoped_lock lock(m_DatabaseMutex);
 
-    CONSOLE_Print( "[MYSQL] closing " + UTIL_ToString( m_IdleConnections.size( ) ) + "/" + UTIL_ToString( m_NumConnections ) + " idle MySQL connections" );
+    Log->Info( "[MYSQL] closing " + UTIL_ToString( m_IdleConnections.size( ) ) + "/" + UTIL_ToString( m_NumConnections ) + " idle MySQL connections" );
 
     while( !m_IdleConnections.empty( ) )
     {
@@ -107,7 +107,7 @@ COHBotDBMySQL :: ~COHBotDBMySQL( )
     }
 
     if( m_OutstandingCallables > 0 )
-        CONSOLE_Print( "[MYSQL] " + UTIL_ToString( m_OutstandingCallables ) + " outstanding callables were never recovered" );
+        Log->Warning( "[MYSQL] " + UTIL_ToString( m_OutstandingCallables ) + " outstanding callables were never recovered" );
 
     mysql_library_end( );
 }
@@ -119,7 +119,7 @@ string COHBotDBMySQL :: GetStatus( )
 
     for(map<string,uint16_t>::iterator iter = COHBotDBMySQL::outstandingCalls.begin(); iter != COHBotDBMySQL::outstandingCalls.end(); ++iter) {
 	if(iter->second >=1 ) {
-		CONSOLE_Print("WARNING - UNRECOVERED CALLABLE FOUND - ["+iter->first+"] with ["+UTIL_ToString(iter->second)+"] unrecovered callables!");
+        Log->Warning("UNRECOVERED CALLABLE FOUND - ["+iter->first+"] with ["+UTIL_ToString(iter->second)+"] unrecovered callables!");
 	}
     }
 
@@ -134,7 +134,7 @@ void COHBotDBMySQL :: RecoverCallable( CBaseCallable *callable )
     if( MySQLCallable )
     {
         if( !MySQLCallable->GetError( ).empty( ) )
-            CONSOLE_Print( "[MYSQL] error --- " + MySQLCallable->GetError( ) );
+            Log->Write( "[MYSQL] error --- " + MySQLCallable->GetError( ) );
 
         if( m_IdleConnections.size( ) > 30 || !MySQLCallable->GetError( ).empty( ) )
         {
@@ -145,12 +145,12 @@ void COHBotDBMySQL :: RecoverCallable( CBaseCallable *callable )
             m_IdleConnections.push( MySQLCallable->GetConnection( ) );
 
         if( m_OutstandingCallables == 0 )
-            CONSOLE_Print( "[MYSQL] recovered a mysql callable with zero outstanding" );
+            Log->Write( "[MYSQL] recovered a mysql callable with zero outstanding" );
         else
             --m_OutstandingCallables;
     }
     else
-        CONSOLE_Print( "[MYSQL] tried to recover a non-mysql callable" );
+        Log->Write( "[MYSQL] tried to recover a non-mysql callable" );
 }
 
 std::vector<std::string> &split2(const std::string &s, char delim, std::vector<std::string> &elems) {
@@ -181,7 +181,7 @@ void COHBotDBMySQL :: CreateThread( CBaseCallable *callable )
     }
     catch( boost :: thread_resource_error tre )
     {
-        CONSOLE_Print( "[MYSQL] error spawning thread on attempt #1 [" + string( tre.what( ) ) + "], pausing execution and trying again in 50ms" );
+        Log->Write( "[MYSQL] error spawning thread on attempt #1 [" + string( tre.what( ) ) + "], pausing execution and trying again in 50ms" );
         MILLISLEEP( 50 );
 
         try
@@ -190,7 +190,7 @@ void COHBotDBMySQL :: CreateThread( CBaseCallable *callable )
         }
         catch( boost :: thread_resource_error tre2 )
         {
-            CONSOLE_Print( "[MYSQL] error spawning thread on attempt #2 [" + string( tre2.what( ) ) + "], giving up" );
+            Log->Write( "[MYSQL] error spawning thread on attempt #2 [" + string( tre2.what( ) ) + "], giving up" );
             callable->SetReady( true );
         }
     }

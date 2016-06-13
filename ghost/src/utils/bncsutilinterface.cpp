@@ -87,22 +87,22 @@ bool CBNCSUtilInterface :: HELP_SID_AUTH_CHECK( bool TFT, string war3Path, strin
         else
         {
             if( m_KeyInfoROC.size( ) != 36 )
-                CONSOLE_Print( "[BNCSUI] unable to create ROC key info - invalid ROC key" );
+                Log->Write( "[BNCSUI] unable to create ROC key info - invalid ROC key" );
 
             if( TFT && m_KeyInfoTFT.size( ) != 36 )
-                CONSOLE_Print( "[BNCSUI] unable to create TFT key info - invalid TFT key" );
+                Log->Write( "[BNCSUI] unable to create TFT key info - invalid TFT key" );
         }
     }
     else
     {
         if( !ExistsWar3EXE )
-            CONSOLE_Print( "[BNCSUI] unable to open [" + FileWar3EXE + "]" );
+            Log->Write( "[BNCSUI] unable to open [" + FileWar3EXE + "]" );
 
         if( !ExistsStormDLL )
-            CONSOLE_Print( "[BNCSUI] unable to open [" + FileStormDLL + "]" );
+            Log->Write( "[BNCSUI] unable to open [" + FileStormDLL + "]" );
 
         if( !ExistsGameDLL )
-            CONSOLE_Print( "[BNCSUI] unable to open [" + FileGameDLL + "]" );
+            Log->Write( "[BNCSUI] unable to open [" + FileGameDLL + "]" );
     }
 
     return false;

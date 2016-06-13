@@ -22,8 +22,8 @@
 
 #include "ohbot.h"
 #include "config.h"
-
 #include <stdlib.h>
+#include "includes.h"
 
 //
 // CConfig
@@ -45,10 +45,10 @@ void CConfig :: Read( string file )
     in.open( file.c_str( ) );
 
     if( in.fail( ) )
-        CONSOLE_Print( "[CONFIG] warning - unable to read file [" + file + "]" );
+        Log->Warning( "[CONFIG] unable to read file [" + file + "]" );
     else
     {
-        //CONSOLE_Print( "[CONFIG] loading file [" + file + "]" );
+        Log->Info( "[CONFIG] loading file [" + file + "]" );
         string Line;
 
         while( !in.eof( ) )

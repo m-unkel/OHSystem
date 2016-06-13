@@ -415,7 +415,7 @@ string UTIL_FileRead( string file, uint32_t start, uint32_t length )
 
     if( IS.fail( ) )
     {
-        CONSOLE_Print( "[UTIL] warning - unable to read file part [" + file + "]" );
+        Log->Warning( "[UTIL] warning - unable to read file part [" + file + "]" );
         return string( );
     }
 
@@ -449,7 +449,7 @@ string UTIL_FileRead( string file )
 
     if( IS.fail( ) )
     {
-        CONSOLE_Print( "[UTIL] warning - unable to read file [" + file + "]" );
+        Log->Warning( "[UTIL] warning - unable to read file [" + file + "]" );
         return string( );
     }
 
@@ -480,7 +480,7 @@ bool UTIL_FileWrite( string file, unsigned char *data, uint32_t length )
 
     if( OS.fail( ) )
     {
-        CONSOLE_Print( "[UTIL] warning - unable to write file [" + file + "]" );
+        Log->Warning( "[UTIL] warning - unable to write file [" + file + "]" );
         return false;
     }
 

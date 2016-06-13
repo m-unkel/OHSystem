@@ -211,7 +211,7 @@ void CPotentialPlayer :: ProcessPackets( )
                 m_IncomingGarenaUser = m_Game->m_OHBot->m_GCBIProtocol->RECEIVE_GCBI_INIT( Packet->GetData( ) );
                 string RoomID = UTIL_ToString(m_IncomingGarenaUser->GetRoomID( ));
                 m_RoomName = m_Game->m_OHBot->GetRoomName( string( RoomID.begin( ), RoomID.end( ) ) );
-                CONSOLE_Print( "[GCBI] Garena user detected; userid=" + UTIL_ToString( m_IncomingGarenaUser->GetUserID( ) ) + ", roomid=" + RoomID + ", RoomName=" + m_RoomName + ", experience=" + UTIL_ToString( m_IncomingGarenaUser->GetUserExp( ) ) + ", country=" + m_IncomingGarenaUser->GetCountryCode( ) );
+                Log->Info( "[GCBI] Garena user detected; userid=" + UTIL_ToString( m_IncomingGarenaUser->GetUserID( ) ) + ", roomid=" + RoomID + ", RoomName=" + m_RoomName + ", experience=" + UTIL_ToString( m_IncomingGarenaUser->GetUserExp( ) ) + ", country=" + m_IncomingGarenaUser->GetCountryCode( ) );
             }
         }
 
@@ -382,7 +382,7 @@ bool CGamePlayer :: Update( void *fd )
 
     /*    	if( m_ConnectionState == 1 && GetTicks( ) - m_ConnectionTime > 5000 && !m_Game->GetGameLoaded() && !m_Game->GetGameLoading() )
         {
-            CONSOLE_Print( "[DENY] Kicking player: MAPSIZE not received within five seconds" );
+            Log->Info( "[DENY] Kicking player: MAPSIZE not received within five seconds" );
             m_DeleteMe = true;
                 SetLeftReason( "MAPSIZE not received within five seconds" );
                 SetLeftCode( PLAYERLEAVE_LOBBY );
@@ -766,7 +766,7 @@ void CGamePlayer :: ProcessPackets( )
                 {
                     m_GProxy = true;
                     m_Socket->PutBytes( m_Game->m_OHBot->m_GPSProtocol->SEND_GPSS_INIT( m_Game->m_OHBot->m_ReconnectPort, m_PID, m_GProxyReconnectKey, m_Game->GetGProxyEmptyActions( ) ) );
-                    //CONSOLE_Print( "[GAME: " + m_Game->GetGameName( ) + "] player [" + m_Name + "] is using GProxy++" );
+                    //Log->Info( "[GAME: " + m_Game->GetGameName( ) + "] player [" + m_Name + "] is using GProxy++" );
                 }
                 else
                 {

@@ -39,7 +39,7 @@
 
 CMap :: CMap( COHBot *nOHBot ) : m_OHBot( nOHBot ), m_Valid( true ), m_MapPath( "Maps\\FrozenThrone\\(12)EmeraldGardens.w3x" ), m_MapSize( UTIL_ExtractNumbers( "174 221 4 0", 4 ) ), m_MapInfo( UTIL_ExtractNumbers( "251 57 68 98", 4 ) ), m_MapCRC( UTIL_ExtractNumbers( "108 250 204 59", 4 ) ), m_MapSHA1( UTIL_ExtractNumbers( "35 81 104 182 223 63 204 215 1 17 87 234 220 66 3 185 82 99 6 13", 20 ) ), m_MapSpeed( MAPSPEED_FAST ), m_MapVisibility( MAPVIS_DEFAULT ), m_MapObservers( MAPOBS_NONE ), m_MapFlags( MAPFLAG_TEAMSTOGETHER | MAPFLAG_FIXEDTEAMS ), m_MapFilterMaker( MAPFILTER_MAKER_BLIZZARD ), m_MapFilterType( MAPFILTER_TYPE_MELEE ), m_MapFilterSize( MAPFILTER_SIZE_LARGE ), m_MapFilterObs( MAPFILTER_OBS_NONE ), m_MapOptions( MAPOPT_MELEE ), m_MapWidth( UTIL_ExtractNumbers( "172 0", 2 ) ), m_MapHeight( UTIL_ExtractNumbers( "172 0", 2 ) ), m_MapLoadInGame( false ), m_MapNumPlayers( 12 ), m_MapNumTeams( 12 )
 {
-    //CONSOLE_Print( "[MAP] using hardcoded Emerald Gardens map data for Warcraft 3 version 1.24 & 1.24b" );
+    //Log->Debug( "[MAP] using hardcoded Emerald Gardens map data for Warcraft 3 version 1.24 & 1.24b" );
     m_Slots.push_back( CGameSlot( 0, 255, SLOTSTATUS_OPEN, 0, 0, 0, SLOTRACE_RANDOM | SLOTRACE_SELECTABLE ) );
     m_Slots.push_back( CGameSlot( 0, 255, SLOTSTATUS_OPEN, 0, 1, 1, SLOTRACE_RANDOM | SLOTRACE_SELECTABLE ) );
     m_Slots.push_back( CGameSlot( 0, 255, SLOTSTATUS_OPEN, 0, 2, 2, SLOTRACE_RANDOM | SLOTRACE_SELECTABLE ) );
@@ -250,11 +250,11 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
 
     if( SFileOpenArchive( MapMPQFileName.c_str( ), 0, MPQ_OPEN_FORCE_MPQ_V1, &MapMPQ ) )
     {
-        //CONSOLE_Print( "[MAP] loading MPQ file [" + MapMPQFileName + "]" );
+        //Log->Debug( "[MAP] loading MPQ file [" + MapMPQFileName + "]" );
         MapMPQReady = true;
     }
 //	else
-//		CONSOLE_Print( "[MAP] warning - unable to load MPQ file [" + MapMPQFileName + "]" );
+//		Log->Debug( "[MAP] warning - unable to load MPQ file [" + MapMPQFileName + "]" );
 
     // try to calculate map_size, map_info, map_crc, map_sha1
 
@@ -270,12 +270,12 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         // calculate map_size
 
         MapSize = UTIL_CreateByteArray( (uint32_t)m_MapData.size( ), false );
-        //CONSOLE_Print( "[MAP] calculated map_size = " + UTIL_ByteArrayToDecString( MapSize ) );
+        //Log->Debug( "[MAP] calculated map_size = " + UTIL_ByteArrayToDecString( MapSize ) );
 
         // calculate map_info (this is actually the CRC)
 
         MapInfo = UTIL_CreateByteArray( (uint32_t)m_OHBot->m_CRC->FullCRC( (unsigned char *)m_MapData.c_str( ), m_MapData.size( ) ), false );
-        //CONSOLE_Print( "[MAP] calculated map_info = " + UTIL_ByteArrayToDecString( MapInfo ) );
+        //Log->Debug( "[MAP] calculated map_info = " + UTIL_ByteArrayToDecString( MapInfo ) );
 
         // calculate map_crc (this is not the CRC) and map_sha1
         // a big thank you to Strilanc for figuring the map_crc algorithm out
@@ -283,13 +283,13 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         string CommonJ = UTIL_FileRead( m_OHBot->m_MapCFGPath + "common.j" );
 
         if( CommonJ.empty( ) )
-            CONSOLE_Print( "[MAP] unable to calculate map_crc/sha1 - unable to read file [" + m_OHBot->m_MapCFGPath + "common.j]" );
+            Log->Write( "[MAP] unable to calculate map_crc/sha1 - unable to read file [" + m_OHBot->m_MapCFGPath + "common.j]" );
         else
         {
             string BlizzardJ = UTIL_FileRead( m_OHBot->m_MapCFGPath + "blizzard.j" );
 
             if( BlizzardJ.empty( ) )
-                CONSOLE_Print( "[MAP] unable to calculate map_crc/sha1 - unable to read file [" + m_OHBot->m_MapCFGPath + "blizzard.j]" );
+                Log->Write( "[MAP] unable to calculate map_crc/sha1 - unable to read file [" + m_OHBot->m_MapCFGPath + "blizzard.j]" );
             else
             {
                 uint32_t Val = 0;
@@ -317,7 +317,6 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
 
                             if( SFileReadFile( SubFile, SubFileData, FileLength, &BytesRead ) )
                             {
-                                //CONSOLE_Print( "[MAP] overriding default common.j with map copy while calculating map_crc/sha1" );
                                 OverrodeCommonJ = true;
                                 Val = Val ^ XORRotateLeft( (unsigned char *)SubFileData, BytesRead );
                                 m_OHBot->m_SHA->Update( (unsigned char *)SubFileData, BytesRead );
@@ -353,7 +352,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
 
                             if( SFileReadFile( SubFile, SubFileData, FileLength, &BytesRead ) )
                             {
-                                //CONSOLE_Print( "[MAP] overriding default blizzard.j with map copy while calculating map_crc/sha1" );
+                                //Log->Info( "[MAP] overriding default blizzard.j with map copy while calculating map_crc/sha1" );
                                 OverrodeBlizzardJ = true;
                                 Val = Val ^ XORRotateLeft( (unsigned char *)SubFileData, BytesRead );
                                 m_OHBot->m_SHA->Update( (unsigned char *)SubFileData, BytesRead );
@@ -416,7 +415,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
 
                                     Val = ROTL( Val ^ XORRotateLeft( (unsigned char *)SubFileData, BytesRead ), 3 );
                                     m_OHBot->m_SHA->Update( (unsigned char *)SubFileData, BytesRead );
-                                    // DEBUG_Print( "*** found: " + *i );
+                                    // Log->Debug( "*** found: " + *i );
                                 }
 
                                 delete [] SubFileData;
@@ -426,30 +425,30 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
                         }
                         else
                         {
-                            // DEBUG_Print( "*** not found: " + *i );
+                            // Log->Debug( "*** not found: " + *i );
                         }
                     }
 
                     //if( !FoundScript )
-                    //	CONSOLE_Print( "[MAP] couldn't find war3map.j or scripts\\war3map.j in MPQ file, calculated map_crc/sha1 is probably wrong" );
+                    //	Log->Write( "[MAP] couldn't find war3map.j or scripts\\war3map.j in MPQ file, calculated map_crc/sha1 is probably wrong" );
 
                     MapCRC = UTIL_CreateByteArray( Val, false );
-                    //CONSOLE_Print( "[MAP] calculated map_crc = " + UTIL_ByteArrayToDecString( MapCRC ) );
+                    //Log->Write( "[MAP] calculated map_crc = " + UTIL_ByteArrayToDecString( MapCRC ) );
 
                     m_OHBot->m_SHA->Final( );
                     unsigned char SHA1[20];
                     memset( SHA1, 0, sizeof( unsigned char ) * 20 );
                     m_OHBot->m_SHA->GetHash( SHA1 );
                     MapSHA1 = UTIL_CreateByteArray( SHA1, 20 );
-                    //CONSOLE_Print( "[MAP] calculated map_sha1 = " + UTIL_ByteArrayToDecString( MapSHA1 ) );
+                    //Log->Info( "[MAP] calculated map_sha1 = " + UTIL_ByteArrayToDecString( MapSHA1 ) );
                 }
 //				else
-//					CONSOLE_Print( "[MAP] unable to calculate map_crc/sha1 - map MPQ file not loaded" );
+//					Log->Write( "[MAP] unable to calculate map_crc/sha1 - map MPQ file not loaded" );
             }
         }
     }
 //	else
-//		CONSOLE_Print( "[MAP] no map data available, using config file for map_size, map_info, map_crc, map_sha1" );
+//		Log->Warning( "[MAP] no map data available, using config file for map_size, map_info, map_crc, map_sha1" );
 
     // try to calculate map_width, map_height, map_slot<x>, map_numplayers, map_numteams
 
@@ -633,27 +632,27 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
                             // let's not confuse the user by displaying erroneous map options so zero them out now
 
                             MapOptions = RawMapFlags & ( MAPOPT_MELEE | MAPOPT_FIXEDPLAYERSETTINGS | MAPOPT_CUSTOMFORCES );
-                            //CONSOLE_Print( "[MAP] calculated map_options = " + UTIL_ToString( MapOptions ) );
+                            //Log->Debug( "[MAP] calculated map_options = " + UTIL_ToString( MapOptions ) );
                             MapWidth = UTIL_CreateByteArray( (uint16_t)RawMapWidth, false );
-                            //CONSOLE_Print( "[MAP] calculated map_width = " + UTIL_ByteArrayToDecString( MapWidth ) );
+                            //Log->Debug( "[MAP] calculated map_width = " + UTIL_ByteArrayToDecString( MapWidth ) );
                             MapHeight = UTIL_CreateByteArray( (uint16_t)RawMapHeight, false );
-                            //CONSOLE_Print( "[MAP] calculated map_height = " + UTIL_ByteArrayToDecString( MapHeight ) );
+                            //Log->Debug( "[MAP] calculated map_height = " + UTIL_ByteArrayToDecString( MapHeight ) );
                             MapNumPlayers = RawMapNumPlayers - ClosedSlots;
-                            //CONSOLE_Print( "[MAP] calculated map_numplayers = " + UTIL_ToString( MapNumPlayers ) );
+                            //Log->Debug( "[MAP] calculated map_numplayers = " + UTIL_ToString( MapNumPlayers ) );
                             MapNumTeams = RawMapNumTeams;
-                            //CONSOLE_Print( "[MAP] calculated map_numteams = " + UTIL_ToString( MapNumTeams ) );
+                            //Log->Debug( "[MAP] calculated map_numteams = " + UTIL_ToString( MapNumTeams ) );
 
                             uint32_t SlotNum = 1;
 
                             for( vector<CGameSlot> :: iterator i = Slots.begin( ); i != Slots.end( ); ++i )
                             {
-                                //CONSOLE_Print( "[MAP] calculated map_slot" + UTIL_ToString( SlotNum ) + " = " + UTIL_ByteArrayToDecString( (*i).GetByteArray( ) ) );
+                                //Log->Debug( "[MAP] calculated map_slot" + UTIL_ToString( SlotNum ) + " = " + UTIL_ByteArrayToDecString( (*i).GetByteArray( ) ) );
                                 ++SlotNum;
                             }
 
                             if( MapOptions & MAPOPT_MELEE )
                             {
-                                //CONSOLE_Print( "[MAP] found melee map, initializing slots" );
+                                //Log->Debug( "[MAP] found melee map, initializing slots" );
 
                                 // give each slot a different team and set the race to random
 
@@ -678,7 +677,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
                         }
                     }
 //					else
-//						CONSOLE_Print( "[MAP] unable to calculate map_options, map_width, map_height, map_slot<x>, map_numplayers, map_numteams - unable to extract war3map.w3i from MPQ file" );
+//						Log->Debug( "[MAP] unable to calculate map_options, map_width, map_height, map_slot<x>, map_numplayers, map_numteams - unable to extract war3map.w3i from MPQ file" );
 
                     delete [] SubFileData;
                 }
@@ -686,13 +685,13 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
                 SFileCloseFile( SubFile );
             }
 //			else
-//				CONSOLE_Print( "[MAP] unable to calculate map_options, map_width, map_height, map_slot<x>, map_numplayers, map_numteams - couldn't find war3map.w3i in MPQ file" );
+//				Log->Debug( "[MAP] unable to calculate map_options, map_width, map_height, map_slot<x>, map_numplayers, map_numteams - couldn't find war3map.w3i in MPQ file" );
         }
 //		else
-//			CONSOLE_Print( "[MAP] unable to calculate map_options, map_width, map_height, map_slot<x>, map_numplayers, map_numteams - map MPQ file not loaded" );
+//			Log->Debug( "[MAP] unable to calculate map_options, map_width, map_height, map_slot<x>, map_numplayers, map_numteams - map MPQ file not loaded" );
     }
 //	else
-//		CONSOLE_Print( "[MAP] no map data available, using config file for map_options, map_width, map_height, map_slot<x>, map_numplayers, map_numteams" );
+//		Log->Debug( "[MAP] no map data available, using config file for map_options, map_width, map_height, map_slot<x>, map_numplayers, map_numteams" );
 
     // close the map MPQ
 
@@ -705,7 +704,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         MapSize = UTIL_ExtractNumbers( CFG->GetString( "map_size", string( ) ), 4 );
     else if( CFG->Exists( "map_size" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_size with config value map_size = " + CFG->GetString( "map_size", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_size with config value map_size = " + CFG->GetString( "map_size", string( ) ) );
         MapSize = UTIL_ExtractNumbers( CFG->GetString( "map_size", string( ) ), 4 );
     }
 
@@ -715,7 +714,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         MapInfo = UTIL_ExtractNumbers( CFG->GetString( "map_info", string( ) ), 4 );
     else if( CFG->Exists( "map_info" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_info with config value map_info = " + CFG->GetString( "map_info", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_info with config value map_info = " + CFG->GetString( "map_info", string( ) ) );
         MapInfo = UTIL_ExtractNumbers( CFG->GetString( "map_info", string( ) ), 4 );
     }
 
@@ -725,7 +724,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         MapCRC = UTIL_ExtractNumbers( CFG->GetString( "map_crc", string( ) ), 4 );
     else if( CFG->Exists( "map_crc" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_crc with config value map_crc = " + CFG->GetString( "map_crc", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_crc with config value map_crc = " + CFG->GetString( "map_crc", string( ) ) );
         MapCRC = UTIL_ExtractNumbers( CFG->GetString( "map_crc", string( ) ), 4 );
     }
 
@@ -735,7 +734,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         MapSHA1 = UTIL_ExtractNumbers( CFG->GetString( "map_sha1", string( ) ), 20 );
     else if( CFG->Exists( "map_sha1" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_sha1 with config value map_sha1 = " + CFG->GetString( "map_sha1", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_sha1 with config value map_sha1 = " + CFG->GetString( "map_sha1", string( ) ) );
         MapSHA1 = UTIL_ExtractNumbers( CFG->GetString( "map_sha1", string( ) ), 20 );
     }
 
@@ -748,7 +747,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
 
     if( CFG->Exists( "map_filter_type" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_filter_type with config value map_filter_type = " + CFG->GetString( "map_filter_type", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_filter_type with config value map_filter_type = " + CFG->GetString( "map_filter_type", string( ) ) );
         MapFilterType = CFG->GetInt( "map_filter_type", MAPFILTER_TYPE_SCENARIO );
     }
 
@@ -763,7 +762,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         MapOptions = CFG->GetInt( "map_options", 0 );
     else if( CFG->Exists( "map_options" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_options with config value map_options = " + CFG->GetString( "map_options", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_options with config value map_options = " + CFG->GetString( "map_options", string( ) ) );
         MapOptions = CFG->GetInt( "map_options", 0 );
     }
 
@@ -773,7 +772,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         MapWidth = UTIL_ExtractNumbers( CFG->GetString( "map_width", string( ) ), 2 );
     else if( CFG->Exists( "map_width" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_width with config value map_width = " + CFG->GetString( "map_width", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_width with config value map_width = " + CFG->GetString( "map_width", string( ) ) );
         MapWidth = UTIL_ExtractNumbers( CFG->GetString( "map_width", string( ) ), 2 );
     }
 
@@ -783,7 +782,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         MapHeight = UTIL_ExtractNumbers( CFG->GetString( "map_height", string( ) ), 2 );
     else if( CFG->Exists( "map_height" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_height with config value map_height = " + CFG->GetString( "map_height", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_height with config value map_height = " + CFG->GetString( "map_height", string( ) ) );
         MapHeight = UTIL_ExtractNumbers( CFG->GetString( "map_height", string( ) ), 2 );
     }
 
@@ -800,15 +799,15 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
     m_AliasType = m_OHBot->GetAliasName( m_Alias );
 
     if( m_AliasType == "failed" ) {
-        CONSOLE_Print( "Unrecognized AliasType, make sure you have set it correctly.");
+        Log->Info( "Unrecognized AliasType, make sure you have set it correctly.");
     } else {
-        CONSOLE_Print( "Successfully encoded AliasType, set Alias to ["+m_AliasType+"].");
+        Log->Info( "Successfully encoded AliasType, set Alias to ["+m_AliasType+"].");
     }
     if( MapNumPlayers == 0 )
         MapNumPlayers = CFG->GetInt( "map_numplayers", 0 );
     else if( CFG->Exists( "map_numplayers" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_numplayers with config value map_numplayers = " + CFG->GetString( "map_numplayers", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_numplayers with config value map_numplayers = " + CFG->GetString( "map_numplayers", string( ) ) );
         MapNumPlayers = CFG->GetInt( "map_numplayers", 0 );
     }
 
@@ -818,7 +817,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
         MapNumTeams = CFG->GetInt( "map_numteams", 0 );
     else if( CFG->Exists( "map_numteams" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding calculated map_numteams with config value map_numteams = " + CFG->GetString( "map_numteams", string( ) ) );
+        //Log->Debug( "[MAP] overriding calculated map_numteams with config value map_numteams = " + CFG->GetString( "map_numteams", string( ) ) );
         MapNumTeams = CFG->GetInt( "map_numteams", 0 );
     }
 
@@ -839,7 +838,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
     }
     else if( CFG->Exists( "map_slot1" ) )
     {
-        //CONSOLE_Print( "[MAP] overriding slots" );
+        //Log->Debug( "[MAP] overriding slots" );
         Slots.clear( );
 
         for( uint32_t Slot = 1; Slot <= 12; ++Slot )
@@ -860,7 +859,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
 
     if( m_MapFlags & MAPFLAG_RANDOMRACES )
     {
-        //CONSOLE_Print( "[MAP] forcing races to random" );
+        //Log->Debug( "[MAP] forcing races to random" );
 
         for( vector<CGameSlot> :: iterator i = m_Slots.begin( ); i != m_Slots.end( ); ++i )
             (*i).SetRace( SLOTRACE_RANDOM );
@@ -870,7 +869,7 @@ void CMap :: Load( CConfig *CFG, string nCFGFile )
 
     if( m_MapObservers == MAPOBS_ALLOWED || m_MapObservers == MAPOBS_REFEREES )
     {
-        //CONSOLE_Print( "[MAP] adding " + UTIL_ToString( 12 - m_Slots.size( ) ) + " observer slots" );
+        //Log->Debug( "[MAP] adding " + UTIL_ToString( 12 - m_Slots.size( ) ) + " observer slots" );
 
         while( m_Slots.size( ) < 12 )
             m_Slots.push_back( CGameSlot( 0, 255, SLOTSTATUS_OPEN, 0, 12, 12, SLOTRACE_RANDOM ) );
@@ -886,59 +885,59 @@ void CMap :: CheckValid( )
     if( m_MapPath.empty( ) || m_MapPath.length( ) > 53 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_path detected" );
+        //Log->Debug( "[MAP] invalid map_path detected" );
     }
     //else if( m_MapPath[0] == '\\' )
-    //CONSOLE_Print( "[MAP] warning - map_path starts with '\\', any replays saved by GHost++ will not be playable in Warcraft III" );
+    //Log->Debug( "[MAP] warning - map_path starts with '\\', any replays saved by GHost++ will not be playable in Warcraft III" );
 
     //if( m_MapPath.find( '/' ) != string :: npos )
-    //CONSOLE_Print( "[MAP] warning - map_path contains forward slashes '/' but it must use Windows style back slashes '\\'" );
+    //Log->Debug( "[MAP] warning - map_path contains forward slashes '/' but it must use Windows style back slashes '\\'" );
 
     if( m_MapSize.size( ) != 4 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_size detected" );
+        //Log->Debug( "[MAP] invalid map_size detected" );
     }
     else if( !m_MapData.empty( ) && m_MapData.size( ) != UTIL_ByteArrayToUInt32( m_MapSize, false ) )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_size detected - size mismatch with actual map data" );
+        //Log->Debug( "[MAP] invalid map_size detected - size mismatch with actual map data" );
     }
 
     if( m_MapInfo.size( ) != 4 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_info detected" );
+        //Log->Debug( "[MAP] invalid map_info detected" );
     }
 
     if( m_MapCRC.size( ) != 4 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_crc detected" );
+        //Log->Debug( "[MAP] invalid map_crc detected" );
     }
 
     if( m_MapSHA1.size( ) != 20 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_sha1 detected" );
+        //Log->Debug( "[MAP] invalid map_sha1 detected" );
     }
 
     if( m_MapSpeed != MAPSPEED_SLOW && m_MapSpeed != MAPSPEED_NORMAL && m_MapSpeed != MAPSPEED_FAST )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_speed detected" );
+        //Log->Debug( "[MAP] invalid map_speed detected" );
     }
 
     if( m_MapVisibility != MAPVIS_HIDETERRAIN && m_MapVisibility != MAPVIS_EXPLORED && m_MapVisibility != MAPVIS_ALWAYSVISIBLE && m_MapVisibility != MAPVIS_DEFAULT )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_visibility detected" );
+        //Log->Debug( "[MAP] invalid map_visibility detected" );
     }
 
     if( m_MapObservers != MAPOBS_NONE && m_MapObservers != MAPOBS_ONDEFEAT && m_MapObservers != MAPOBS_ALLOWED && m_MapObservers != MAPOBS_REFEREES )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_observers detected" );
+        //Log->Debug( "[MAP] invalid map_observers detected" );
     }
 
     // todotodo: m_MapFlags
@@ -947,31 +946,31 @@ void CMap :: CheckValid( )
     if( m_MapWidth.size( ) != 2 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_width detected" );
+        //Log->Debug( "[MAP] invalid map_width detected" );
     }
 
     if( m_MapHeight.size( ) != 2 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_height detected" );
+        //Log->Debug( "[MAP] invalid map_height detected" );
     }
 
     if( m_MapNumPlayers == 0 || m_MapNumPlayers > 12 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_numplayers detected" );
+        //Log->Debug( "[MAP] invalid map_numplayers detected" );
     }
 
     if( m_MapNumTeams == 0 || m_MapNumTeams > 12 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_numteams detected" );
+        //Log->Debug( "[MAP] invalid map_numteams detected" );
     }
 
     if( m_Slots.empty( ) || m_Slots.size( ) > 12 )
     {
         m_Valid = false;
-        //CONSOLE_Print( "[MAP] invalid map_slot<x> detected" );
+        //Log->Debug( "[MAP] invalid map_slot<x> detected" );
     }
 }
 

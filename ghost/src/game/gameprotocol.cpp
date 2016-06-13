@@ -46,8 +46,8 @@ CGameProtocol :: ~CGameProtocol( )
 
 CIncomingJoinPlayer *CGameProtocol :: RECEIVE_W3GS_REQJOIN( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED W3GS_REQJOIN" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_REQJOIN" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -79,8 +79,8 @@ CIncomingJoinPlayer *CGameProtocol :: RECEIVE_W3GS_REQJOIN( BYTEARRAY data )
 
 uint32_t CGameProtocol :: RECEIVE_W3GS_LEAVEGAME( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED W3GS_LEAVEGAME" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_LEAVEGAME" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -94,8 +94,8 @@ uint32_t CGameProtocol :: RECEIVE_W3GS_LEAVEGAME( BYTEARRAY data )
 
 bool CGameProtocol :: RECEIVE_W3GS_GAMELOADED_SELF( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED W3GS_GAMELOADED_SELF" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_GAMELOADED_SELF" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -108,8 +108,8 @@ bool CGameProtocol :: RECEIVE_W3GS_GAMELOADED_SELF( BYTEARRAY data )
 
 CIncomingAction *CGameProtocol :: RECEIVE_W3GS_OUTGOING_ACTION( BYTEARRAY data, unsigned char PID )
 {
-    // DEBUG_Print( "RECEIVED W3GS_OUTGOING_ACTION" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_OUTGOING_ACTION" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -128,8 +128,8 @@ CIncomingAction *CGameProtocol :: RECEIVE_W3GS_OUTGOING_ACTION( BYTEARRAY data, 
 
 uint32_t CGameProtocol :: RECEIVE_W3GS_OUTGOING_KEEPALIVE( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED W3GS_OUTGOING_KEEPALIVE" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_OUTGOING_KEEPALIVE" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -144,8 +144,8 @@ uint32_t CGameProtocol :: RECEIVE_W3GS_OUTGOING_KEEPALIVE( BYTEARRAY data )
 
 CIncomingChatPlayer *CGameProtocol :: RECEIVE_W3GS_CHAT_TO_HOST( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED W3GS_CHAT_TO_HOST" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_CHAT_TO_HOST" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -214,8 +214,8 @@ bool CGameProtocol :: RECEIVE_W3GS_SEARCHGAME( BYTEARRAY data, unsigned char war
     uint32_t ProductID	= 1462982736;	// "W3XP"
     uint32_t Version	= war3Version;
 
-    // DEBUG_Print( "RECEIVED W3GS_SEARCHGAME" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_SEARCHGAME" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -240,8 +240,8 @@ bool CGameProtocol :: RECEIVE_W3GS_SEARCHGAME( BYTEARRAY data, unsigned char war
 
 CIncomingMapSize *CGameProtocol :: RECEIVE_W3GS_MAPSIZE( BYTEARRAY data, BYTEARRAY mapSize )
 {
-    // DEBUG_Print( "RECEIVED W3GS_MAPSIZE" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_MAPSIZE" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -257,8 +257,8 @@ CIncomingMapSize *CGameProtocol :: RECEIVE_W3GS_MAPSIZE( BYTEARRAY data, BYTEARR
 
 uint32_t CGameProtocol :: RECEIVE_W3GS_MAPPARTOK( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED W3GS_MAPPARTOK" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_MAPPARTOK" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -275,8 +275,8 @@ uint32_t CGameProtocol :: RECEIVE_W3GS_MAPPARTOK( BYTEARRAY data )
 
 uint32_t CGameProtocol :: RECEIVE_W3GS_PONG_TO_HOST( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED W3GS_PONG_TO_HOST" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED W3GS_PONG_TO_HOST" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -305,8 +305,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_PING_FROM_HOST( )
     packet.push_back( 0 );									// packet length will be assigned later
     UTIL_AppendByteArray( packet, GetTicks( ), false );		// ping value
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_PING_FROM_HOST" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_PING_FROM_HOST" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -335,10 +335,10 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_SLOTINFOJOIN( unsigned char PID, BYTEARRAY 
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_SLOTINFOJOIN" );
+        Log->Write( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_SLOTINFOJOIN" );
 
-    // DEBUG_Print( "SENT W3GS_SLOTINFOJOIN" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_SLOTINFOJOIN" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -351,8 +351,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_REJECTJOIN( uint32_t reason )
     packet.push_back( 0 );									// packet length will be assigned later
     UTIL_AppendByteArray( packet, reason, false );			// reason
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_REJECTJOIN" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_REJECTJOIN" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -394,10 +394,10 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_PLAYERINFO( unsigned char PID, string name,
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_PLAYERINFO" );
+        Log->Write( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_PLAYERINFO" );
 
-    // DEBUG_Print( "SENT W3GS_PLAYERINFO" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_PLAYERINFO" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -416,10 +416,10 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_PLAYERLEAVE_OTHERS( unsigned char PID, uint
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_PLAYERLEAVE_OTHERS" );
+        Log->Write( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_PLAYERLEAVE_OTHERS" );
 
-    // DEBUG_Print( "SENT W3GS_PLAYERLEAVE_OTHERS" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_PLAYERLEAVE_OTHERS" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -437,10 +437,10 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_GAMELOADED_OTHERS( unsigned char PID )
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_GAMELOADED_OTHERS" );
+        Log->Write( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_GAMELOADED_OTHERS" );
 
-    // DEBUG_Print( "SENT W3GS_GAMELOADED_OTHERS" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_GAMELOADED_OTHERS" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -455,8 +455,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_SLOTINFO( vector<CGameSlot> &slots, uint32_
     UTIL_AppendByteArray( packet, (uint16_t)SlotInfo.size( ), false );			// SlotInfo length
     UTIL_AppendByteArrayFast( packet, SlotInfo );								// SlotInfo
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_SLOTINFO" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_SLOTINFO" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -468,8 +468,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_COUNTDOWN_START( )
     packet.push_back( 0 );							// packet length will be assigned later
     packet.push_back( 0 );							// packet length will be assigned later
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_COUNTDOWN_START" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_COUNTDOWN_START" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -481,8 +481,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_COUNTDOWN_END( )
     packet.push_back( 0 );							// packet length will be assigned later
     packet.push_back( 0 );							// packet length will be assigned later
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_COUNTDOWN_END" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_COUNTDOWN_END" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -522,8 +522,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_INCOMING_ACTION( queue<CIncomingAction *> a
     }
 
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_INCOMING_ACTION" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_INCOMING_ACTION" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -546,10 +546,10 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_CHAT_FROM_HOST( unsigned char fromPID, BYTE
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_CHAT_FROM_HOST" );
+        Log->Write( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_CHAT_FROM_HOST" );
 
-    // DEBUG_Print( "SENT W3GS_CHAT_FROM_HOST" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_CHAT_FROM_HOST" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -604,10 +604,10 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_START_LAG( vector<CGamePlayer *> players, b
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[GAMEPROTO] no laggers passed to SEND_W3GS_START_LAG" );
+        Log->Write( "[GAMEPROTO] no laggers passed to SEND_W3GS_START_LAG" );
 
-    // DEBUG_Print( "SENT W3GS_START_LAG" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_START_LAG" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -626,8 +626,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_STOP_LAG( CGamePlayer *player, bool loadInG
         UTIL_AppendByteArray( packet, GetTicks( ) - player->GetStartedLaggingTicks( ), false );
 
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_STOP_LAG" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_STOP_LAG" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -652,8 +652,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_SEARCHGAME( bool TFT, unsigned char war3Ver
     UTIL_AppendByteArray( packet, Version, 4 );				// Version
     UTIL_AppendByteArray( packet, Unknown, 4 );				// ???
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_SEARCHGAME" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_SEARCHGAME" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -709,10 +709,10 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_GAMEINFO( bool TFT, unsigned char war3Versi
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_GAMEINFO" );
+        Log->Write( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_GAMEINFO" );
 
-    // DEBUG_Print( "SENT W3GS_GAMEINFO" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_GAMEINFO" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -737,8 +737,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_CREATEGAME( bool TFT, unsigned char war3Ver
     UTIL_AppendByteArray( packet, Version, 4 );				// Version
     UTIL_AppendByteArray( packet, HostCounter, 4 );			// Host Counter
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_CREATEGAME" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_CREATEGAME" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -755,8 +755,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_REFRESHGAME( uint32_t players, uint32_t pla
     UTIL_AppendByteArray( packet, players, false );		// Players
     UTIL_AppendByteArray( packet, playerSlots, false );	// Player Slots
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_REFRESHGAME" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_REFRESHGAME" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -771,8 +771,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_DECREATEGAME( )
     packet.push_back( 0 );								// packet length will be assigned later
     UTIL_AppendByteArray( packet, HostCounter, 4 );		// Host Counter
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_DECREATEGAME" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_DECREATEGAME" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -797,10 +797,10 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_MAPCHECK( string mapPath, BYTEARRAY mapSize
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_MAPCHECK" );
+        Log->Write( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_MAPCHECK" );
 
-    // DEBUG_Print( "SENT W3GS_MAPCHECK" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_MAPCHECK" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -816,8 +816,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_STARTDOWNLOAD( unsigned char fromPID )
     UTIL_AppendByteArray( packet, Unknown, 4 );				// ???
     packet.push_back( fromPID );							// from PID
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_STARTDOWNLOAD" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_STARTDOWNLOAD" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -857,10 +857,10 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_MAPPART( unsigned char fromPID, unsigned ch
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_MAPPART" );
+        Log->Write( "[GAMEPROTO] invalid parameters passed to SEND_W3GS_MAPPART" );
 
-    // DEBUG_Print( "SENT W3GS_MAPPART" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_MAPPART" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -901,8 +901,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_INCOMING_ACTION2( queue<CIncomingAction *> 
     }
 
     AssignLength( packet );
-    // DEBUG_Print( "SENT W3GS_INCOMING_ACTION2" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT W3GS_INCOMING_ACTION2" );
+    // Log->Debug( packet );
     return packet;
 }
 

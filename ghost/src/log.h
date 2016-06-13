@@ -13,8 +13,8 @@
 #define LOG_DEBUG           8
 #define LOG_INFO            16
 #define LOG_KEEPOPENED      32
-#define LOG_COUT_ONLY       64
-#define LOG_FILE_ONLY       128
+#define LOG_COUT            64
+#define LOG_FILE            128
 
 class CLog {
 private:
@@ -31,12 +31,13 @@ public:
     CLog* set( unsigned char cMode );
     CLog* unset( unsigned char cMode );
 
-    CLog* Debug( string sMessage ): Write(sMessage,LOG_DEBUG){};
+    CLog* Debug( string sMessage ): Write(sMessage,LOG_DEBUG|LOG_FILE|LOG_COUT){};
     CLog* Debug( BYTEARRAY b );
-    CLog* Cout ( string sMessage ): Write(sMessage,LOG_COUT_ONLY){};
-    CLog* Info( string sMessage ): Write(sMessage,LOG_INFO){};
-    CLog* Warning( string sMessage ): Write(sMessage,LOG_WARNING){};
-    CLog* Write( const string sMessage ): Write(sMessage,LOG_ERROR){};
+    CLog* Chat ( string sMessage ): Write(sMessage,LOG_INFO|LOG_FILE|LOG_COUT){};
+    CLog* Cout ( string sMessage ): Write(sMessage,LOG_COUT){};
+    CLog* Info( string sMessage ): Write(sMessage,LOG_INFO|LOG_COUT){};
+    CLog* Warning( string sMessage ): Write(sMessage,LOG_WARNING|LOG_FILE|LOG_COUT){};
+    CLog* Write( const string sMessage ): Write(sMessage,LOG_ERROR|LOG_FILE|LOG_COUT){};
     CLog* Write( const string sMessage, unsigned char writeMode );
 };
 

@@ -40,9 +40,9 @@
 #include "database/ghostdbmysql.h"
 #include "bnet/bnet.h"
 #include "map.h"
-#include "utils/packed.h"
-#include "replay.h"
-#include "savegame.h"
+#include "replay/packed.h"
+#include "replay/replay.h"
+#include "replay/savegame.h"
 #include "game/gameplayer.h"
 #include "game/gameprotocol.h"
 #include "game/gameprotocol.h"
@@ -297,7 +297,7 @@ COHBot :: COHBot( CConfig *CFG )
         if( Locale == "system" )
         {
 #ifdef WIN32
-            CONSOLE_Print( "[GHOST] using system locale of " + UTIL_ToString( LocaleID ) );
+            Log->Info( "[GHOST] using system locale of " + UTIL_ToString( LocaleID ) );
 #else
             Log->Warning( "[GHOST] unable to get system locale, using default locale of 1033" );
 #endif
@@ -406,7 +406,7 @@ COHBot :: ~COHBot( )
     // but if you try to recreate the COHBot object within a single session you will probably leak resources!
 
 //	if( !m_Callables.empty( ) )
-//		CONSOLE_Print( "[GHOST] warning - " + UTIL_ToString( m_Callables.size( ) ) + " orphaned callables were leaked (this is not an error)" );
+//		Log->Warning( "[GHOST] warning - " + UTIL_ToString( m_Callables.size( ) ) + " orphaned callables were leaked (this is not an error)" );
 
 
     delete m_DB;

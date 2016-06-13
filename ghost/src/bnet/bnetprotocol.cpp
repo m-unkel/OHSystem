@@ -41,8 +41,8 @@ CBNETProtocol :: ~CBNETProtocol( )
 
 bool CBNETProtocol :: RECEIVE_SID_NULL( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_NULL" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_NULL" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -52,8 +52,8 @@ bool CBNETProtocol :: RECEIVE_SID_NULL( BYTEARRAY data )
 
 CIncomingGameHost *CBNETProtocol :: RECEIVE_SID_GETADVLISTEX( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_GETADVLISTEX" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_GETADVLISTEX" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -96,8 +96,8 @@ CIncomingGameHost *CBNETProtocol :: RECEIVE_SID_GETADVLISTEX( BYTEARRAY data )
 
 bool CBNETProtocol :: RECEIVE_SID_ENTERCHAT( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_ENTERCHAT" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_ENTERCHAT" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -114,8 +114,8 @@ bool CBNETProtocol :: RECEIVE_SID_ENTERCHAT( BYTEARRAY data )
 
 CIncomingChatEvent *CBNETProtocol :: RECEIVE_SID_CHATEVENT( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_CHATEVENT" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_CHATEVENT" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -163,8 +163,8 @@ CIncomingChatEvent *CBNETProtocol :: RECEIVE_SID_CHATEVENT( BYTEARRAY data )
 
 bool CBNETProtocol :: RECEIVE_SID_CHECKAD( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_CHECKAD" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_CHECKAD" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -174,8 +174,8 @@ bool CBNETProtocol :: RECEIVE_SID_CHECKAD( BYTEARRAY data )
 
 bool CBNETProtocol :: RECEIVE_SID_STARTADVEX3( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_STARTADVEX3" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_STARTADVEX3" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -194,8 +194,8 @@ bool CBNETProtocol :: RECEIVE_SID_STARTADVEX3( BYTEARRAY data )
 
 BYTEARRAY CBNETProtocol :: RECEIVE_SID_PING( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_PING" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_PING" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -209,8 +209,8 @@ BYTEARRAY CBNETProtocol :: RECEIVE_SID_PING( BYTEARRAY data )
 
 bool CBNETProtocol :: RECEIVE_SID_LOGONRESPONSE( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_LOGONRESPONSE" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_LOGONRESPONSE" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -229,8 +229,8 @@ bool CBNETProtocol :: RECEIVE_SID_LOGONRESPONSE( BYTEARRAY data )
 
 bool CBNETProtocol :: RECEIVE_SID_AUTH_INFO( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_AUTH_INFO" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_AUTH_INFO" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -256,8 +256,8 @@ bool CBNETProtocol :: RECEIVE_SID_AUTH_INFO( BYTEARRAY data )
 
 bool CBNETProtocol :: RECEIVE_SID_AUTH_CHECK( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_AUTH_CHECK" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_AUTH_CHECK" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -278,8 +278,8 @@ bool CBNETProtocol :: RECEIVE_SID_AUTH_CHECK( BYTEARRAY data )
 
 bool CBNETProtocol :: RECEIVE_SID_AUTH_ACCOUNTLOGON( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_AUTH_ACCOUNTLOGON" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_AUTH_ACCOUNTLOGON" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -305,8 +305,8 @@ bool CBNETProtocol :: RECEIVE_SID_AUTH_ACCOUNTLOGON( BYTEARRAY data )
 
 bool CBNETProtocol :: RECEIVE_SID_AUTH_ACCOUNTLOGONPROOF( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_AUTH_ACCOUNTLOGONPROOF" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_AUTH_ACCOUNTLOGONPROOF" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -325,8 +325,8 @@ bool CBNETProtocol :: RECEIVE_SID_AUTH_ACCOUNTLOGONPROOF( BYTEARRAY data )
 
 BYTEARRAY CBNETProtocol :: RECEIVE_SID_WARDEN( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_WARDEN" );
-    // DEBUG_PRINT( data );
+    // Log->Debug( "RECEIVED SID_WARDEN" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -340,8 +340,8 @@ BYTEARRAY CBNETProtocol :: RECEIVE_SID_WARDEN( BYTEARRAY data )
 
 vector<CIncomingFriendList *> CBNETProtocol :: RECEIVE_SID_FRIENDSLIST( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_FRIENDSLIST" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_FRIENDSLIST" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -390,8 +390,8 @@ vector<CIncomingFriendList *> CBNETProtocol :: RECEIVE_SID_FRIENDSLIST( BYTEARRA
 
 vector<CIncomingClanList *> CBNETProtocol :: RECEIVE_SID_CLANMEMBERLIST( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_CLANMEMBERLIST" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_CLANMEMBERLIST" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -442,8 +442,8 @@ vector<CIncomingClanList *> CBNETProtocol :: RECEIVE_SID_CLANMEMBERLIST( BYTEARR
 
 CIncomingClanList *CBNETProtocol :: RECEIVE_SID_CLANMEMBERSTATUSCHANGE( BYTEARRAY data )
 {
-    // DEBUG_Print( "RECEIVED SID_CLANMEMBERSTATUSCHANGE" );
-    // DEBUG_Print( data );
+    // Log->Debug( "RECEIVED SID_CLANMEMBERSTATUSCHANGE" );
+    // Log->Debug( data );
 
     // 2 bytes					-> Header
     // 2 bytes					-> Length
@@ -481,8 +481,8 @@ BYTEARRAY CBNETProtocol :: SEND_PROTOCOL_INITIALIZE_SELECTOR( )
 {
     BYTEARRAY packet;
     packet.push_back( 1 );
-    // DEBUG_Print( "SENT PROTOCOL_INITIALIZE_SELECTOR" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT PROTOCOL_INITIALIZE_SELECTOR" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -494,8 +494,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_NULL( )
     packet.push_back( 0 );						// packet length will be assigned later
     packet.push_back( 0 );						// packet length will be assigned later
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_NULL" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_NULL" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -507,8 +507,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_STOPADV( )
     packet.push_back( 0 );						// packet length will be assigned later
     packet.push_back( 0 );						// packet length will be assigned later
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_STOPADV" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_STOPADV" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -532,8 +532,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_GETADVLISTEX( string gameName )
     packet.push_back( 0 );								// Game Password is NULL
     packet.push_back( 0 );								// Game Stats is NULL
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_GETADVLISTEX" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_GETADVLISTEX" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -547,8 +547,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_ENTERCHAT( )
     packet.push_back( 0 );						// Account Name is NULL on Warcraft III/The Frozen Throne
     packet.push_back( 0 );						// Stat String is NULL on CDKEY'd products
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_ENTERCHAT" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_ENTERCHAT" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -570,8 +570,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_JOINCHANNEL( string channel )
 
     UTIL_AppendByteArrayFast( packet, channel );
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_JOINCHANNEL" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_JOINCHANNEL" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -584,8 +584,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_CHATCOMMAND( string command )
     packet.push_back( 0 );							// packet length will be assigned later
     UTIL_AppendByteArrayFast( packet, command );	// Message
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_CHATCOMMAND" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_CHATCOMMAND" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -603,8 +603,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_CHECKAD( )
     UTIL_AppendByteArray( packet, Zeros, 4 );	// ???
     UTIL_AppendByteArray( packet, Zeros, 4 );	// ???
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_CHECKAD" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_CHECKAD" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -687,10 +687,10 @@ BYTEARRAY CBNETProtocol :: SEND_SID_STARTADVEX3( unsigned char state, BYTEARRAY 
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[BNETPROTO] invalid parameters passed to SEND_SID_STARTADVEX3" );
+        Log->Write( "[BNETPROTO] invalid parameters passed to SEND_SID_STARTADVEX3" );
 
-    // DEBUG_Print( "SENT SID_STARTADVEX3" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_STARTADVEX3" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -709,8 +709,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_NOTIFYJOIN( string gameName )
     UTIL_AppendByteArrayFast( packet, gameName );		// Game Name
     packet.push_back( 0 );								// Game Password is NULL
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_NOTIFYJOIN" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_NOTIFYJOIN" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -728,10 +728,10 @@ BYTEARRAY CBNETProtocol :: SEND_SID_PING( BYTEARRAY pingValue )
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[BNETPROTO] invalid parameters passed to SEND_SID_PING" );
+        Log->Write( "[BNETPROTO] invalid parameters passed to SEND_SID_PING" );
 
-    // DEBUG_Print( "SENT SID_PING" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_PING" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -749,8 +749,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_LOGONRESPONSE( BYTEARRAY clientToken, BYTEAR
     UTIL_AppendByteArrayFast( packet, passwordHash );	// Password Hash
     UTIL_AppendByteArrayFast( packet, accountName );	// Account Name
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_LOGONRESPONSE" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_LOGONRESPONSE" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -763,8 +763,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_NETGAMEPORT( uint16_t serverPort )
     packet.push_back( 0 );								// packet length will be assigned later
     UTIL_AppendByteArray( packet, serverPort, false );	// local game server port
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_NETGAMEPORT" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_NETGAMEPORT" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -801,8 +801,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_AUTH_INFO( unsigned char ver, bool TFT, uint
     UTIL_AppendByteArrayFast( packet, countryAbbrev );		// Country Abbreviation
     UTIL_AppendByteArrayFast( packet, country );			// Country
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_AUTH_INFO" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_AUTH_INFO" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -838,10 +838,10 @@ BYTEARRAY CBNETProtocol :: SEND_SID_AUTH_CHECK( bool TFT, BYTEARRAY clientToken,
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[BNETPROTO] invalid parameters passed to SEND_SID_AUTH_CHECK" );
+        Log->Write( "[BNETPROTO] invalid parameters passed to SEND_SID_AUTH_CHECK" );
 
-    // DEBUG_Print( "SENT SID_AUTH_CHECK" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_AUTH_CHECK" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -860,10 +860,10 @@ BYTEARRAY CBNETProtocol :: SEND_SID_AUTH_ACCOUNTLOGON( BYTEARRAY clientPublicKey
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[BNETPROTO] invalid parameters passed to SEND_SID_AUTH_ACCOUNTLOGON" );
+        Log->Write( "[BNETPROTO] invalid parameters passed to SEND_SID_AUTH_ACCOUNTLOGON" );
 
-    // DEBUG_Print( "SENT SID_AUTH_ACCOUNTLOGON" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_AUTH_ACCOUNTLOGON" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -881,10 +881,10 @@ BYTEARRAY CBNETProtocol :: SEND_SID_AUTH_ACCOUNTLOGONPROOF( BYTEARRAY clientPass
         AssignLength( packet );
     }
     else
-        CONSOLE_Print( "[BNETPROTO] invalid parameters passed to SEND_SID_AUTH_ACCOUNTLOGON" );
+        Log->Write( "[BNETPROTO] invalid parameters passed to SEND_SID_AUTH_ACCOUNTLOGON" );
 
-    // DEBUG_Print( "SENT SID_AUTH_ACCOUNTLOGONPROOF" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_AUTH_ACCOUNTLOGONPROOF" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -897,8 +897,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_WARDEN( BYTEARRAY wardenResponse )
     packet.push_back( 0 );								// packet length will be assigned later
     UTIL_AppendByteArrayFast( packet, wardenResponse );	// warden response
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_WARDEN" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_WARDEN" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -910,8 +910,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_FRIENDSLIST( )
     packet.push_back( 0 );						// packet length will be assigned later
     packet.push_back( 0 );						// packet length will be assigned later
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_FRIENDSLIST" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_FRIENDSLIST" );
+    // Log->Debug( packet );
     return packet;
 }
 
@@ -926,8 +926,8 @@ BYTEARRAY CBNETProtocol :: SEND_SID_CLANMEMBERLIST( )
     packet.push_back( 0 );						// packet length will be assigned later
     UTIL_AppendByteArray( packet, Cookie, 4 );	// cookie
     AssignLength( packet );
-    // DEBUG_Print( "SENT SID_CLANMEMBERLIST" );
-    // DEBUG_Print( packet );
+    // Log->Debug( "SENT SID_CLANMEMBERLIST" );
+    // Log->Debug( packet );
     return packet;
 }
 

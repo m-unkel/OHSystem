@@ -21,8 +21,8 @@
 */
 
 #include "../ohbot.h"
-#include "util.h"
-#include "crc32.h"
+#include "../utils/util.h"
+#include "../utils/crc32.h"
 #include "packed.h"
 
 #include <zlib.h>
@@ -82,7 +82,7 @@ CPacked :: ~CPacked( )
 void CPacked :: Load( string fileName, bool allBlocks )
 {
     m_Valid = true;
-    CONSOLE_Print( "[PACKED] loading data from file [" + fileName + "]" );
+    Log->Info( "[PACKED] loading data from file [" + fileName + "]" );
     m_Compressed = UTIL_FileRead( fileName );
     Decompress( allBlocks );
 }
@@ -93,7 +93,7 @@ bool CPacked :: Save( bool TFT, string fileName )
 
     if( m_Valid )
     {
-        CONSOLE_Print( "[PACKED] saving data to file [" + fileName + "]" );
+        Log->Info( "[PACKED] saving data to file [" + fileName + "]" );
         return UTIL_FileWrite( fileName, (unsigned char *)m_Compressed.c_str( ), m_Compressed.size( ) );
     }
     else
@@ -103,7 +103,7 @@ bool CPacked :: Save( bool TFT, string fileName )
 bool CPacked :: Extract( string inFileName, string outFileName )
 {
     m_Valid = true;
-    CONSOLE_Print( "[PACKED] extracting data from file [" + inFileName + "] to file [" + outFileName + "]" );
+    Log->Info( "[PACKED] extracting data from file [" + inFileName + "] to file [" + outFileName + "]" );
     m_Compressed = UTIL_FileRead( inFileName );
     Decompress( true );
 
@@ -116,7 +116,7 @@ bool CPacked :: Extract( string inFileName, string outFileName )
 bool CPacked :: Pack( bool TFT, string inFileName, string outFileName )
 {
     m_Valid = true;
-    CONSOLE_Print( "[PACKET] packing data from file [" + inFileName + "] to file [" + outFileName + "]" );
+    Log->Info( "[PACKET] packing data from file [" + inFileName + "] to file [" + outFileName + "]" );
     m_Decompressed = UTIL_FileRead( inFileName );
     Compress( TFT );
 
@@ -128,7 +128,7 @@ bool CPacked :: Pack( bool TFT, string inFileName, string outFileName )
 
 void CPacked :: Decompress( bool allBlocks )
 {
-    CONSOLE_Print( "[PACKED] decompressing data" );
+    Log->Info( "[PACKED] decompressing data" );
 
     // format found at http://www.thehelper.net/forums/showthread.php?t=42787
 
@@ -142,7 +142,7 @@ void CPacked :: Decompress( bool allBlocks )
 
     if( GarbageString != "Warcraft III recorded game\x01A" )
     {
-        CONSOLE_Print( "[PACKED] not a valid packed file" );
+        Log->Write( "[PACKED] not a valid packed file" );
         m_Valid = false;
         return;
     }
@@ -158,7 +158,7 @@ void CPacked :: Decompress( bool allBlocks )
         ISS.seekg( 2, ios :: cur );					// unknown
         ISS.seekg( 2, ios :: cur );					// version number
 
-        CONSOLE_Print( "[PACKED] header version is too old" );
+        Log->Write( "[PACKED] header version is too old" );
         m_Valid = false;
         return;
     }
@@ -175,15 +175,15 @@ void CPacked :: Decompress( bool allBlocks )
 
     if( ISS.fail( ) )
     {
-        CONSOLE_Print( "[PACKED] failed to read header" );
+        Log->Write( "[PACKED] failed to read header" );
         m_Valid = false;
         return;
     }
 
     if( allBlocks )
-        CONSOLE_Print( "[PACKED] reading " + UTIL_ToString( m_NumBlocks ) + " blocks" );
+        Log->Write( "[PACKED] reading " + UTIL_ToString( m_NumBlocks ) + " blocks" );
     else
-        CONSOLE_Print( "[PACKED] reading 1/" + UTIL_ToString( m_NumBlocks ) + " blocks" );
+        Log->Write( "[PACKED] reading 1/" + UTIL_ToString( m_NumBlocks ) + " blocks" );
 
     // read blocks
 
@@ -200,7 +200,7 @@ void CPacked :: Decompress( bool allBlocks )
 
         if( ISS.fail( ) )
         {
-            CONSOLE_Print( "[PACKED] failed to read block header" );
+            Log->Write( "[PACKED] failed to read block header" );
             m_Valid = false;
             return;
         }
@@ -215,7 +215,7 @@ void CPacked :: Decompress( bool allBlocks )
 
         if( ISS.fail( ) )
         {
-            CONSOLE_Print( "[PACKED] failed to read block data" );
+            Log->Write( "[PACKED] failed to read block data" );
             delete [] DecompressedData;
             delete [] CompressedData;
             m_Valid = false;
@@ -228,7 +228,7 @@ void CPacked :: Decompress( bool allBlocks )
 
         if( Result != Z_OK )
         {
-            CONSOLE_Print( "[PACKED] tzuncompress error " + UTIL_ToString( Result ) );
+            Log->Write( "[PACKED] tzuncompress error " + UTIL_ToString( Result ) );
             delete [] DecompressedData;
             delete [] CompressedData;
             m_Valid = false;
@@ -237,7 +237,7 @@ void CPacked :: Decompress( bool allBlocks )
 
         if( BlockDecompressedLong != (uLongf)BlockDecompressed )
         {
-            CONSOLE_Print( "[PACKED] block decompressed size mismatch, actual = " + UTIL_ToString( BlockDecompressedLong ) + ", expected = " + UTIL_ToString( BlockDecompressed ) );
+            Log->Write( "[PACKED] block decompressed size mismatch, actual = " + UTIL_ToString( BlockDecompressedLong ) + ", expected = " + UTIL_ToString( BlockDecompressed ) );
             delete [] DecompressedData;
             delete [] CompressedData;
             m_Valid = false;
@@ -254,27 +254,27 @@ void CPacked :: Decompress( bool allBlocks )
             break;
     }
 
-    CONSOLE_Print( "[PACKED] decompressed " + UTIL_ToString( m_Decompressed.size( ) ) + " bytes" );
+    Log->Info( "[PACKED] decompressed " + UTIL_ToString( m_Decompressed.size( ) ) + " bytes" );
 
     if( allBlocks || m_NumBlocks == 1 )
     {
         if( m_DecompressedSize > m_Decompressed.size( ) )
         {
-            CONSOLE_Print( "[PACKED] not enough decompressed data" );
+            Log->Write( "[PACKED] not enough decompressed data" );
             m_Valid = false;
             return;
         }
 
         // the last block is padded with zeros, discard them
 
-        CONSOLE_Print( "[PACKED] discarding " + UTIL_ToString( m_Decompressed.size( ) - m_DecompressedSize ) + " bytes" );
+        Log->Write( "[PACKED] discarding " + UTIL_ToString( m_Decompressed.size( ) - m_DecompressedSize ) + " bytes" );
         m_Decompressed.erase( m_DecompressedSize );
     }
 }
 
 void CPacked :: Compress( bool TFT )
 {
-    CONSOLE_Print( "[PACKED] compressing data" );
+    Log->Info( "[PACKED] compressing data" );
 
     // format found at http://www.thehelper.net/forums/showthread.php?t=42787
 
@@ -297,7 +297,7 @@ void CPacked :: Compress( bool TFT )
 
         if( Result != Z_OK )
         {
-            CONSOLE_Print( "[PACKED] compress error " + UTIL_ToString( Result ) );
+            Log->Write( "[PACKED] compress error " + UTIL_ToString( Result ) );
             delete [] CompressedData;
             m_Valid = false;
             return;

@@ -28,8 +28,8 @@
 #include "../database/ghostdb.h"
 #include "../bnet/bnet.h"
 #include "../map.h"
-#include "../utils/packed.h"
-#include "../savegame.h"
+#include "../replay/packed.h"
+#include "../replay/savegame.h"
 #include "gameplayer.h"
 #include "gameprotocol.h"
 #include "game_base.h"
@@ -83,7 +83,7 @@ CGame::CGame(COHBot *nOHBot, CMap *nMap, CSaveGame *nSaveGame, uint16_t nHostPor
     } else if (m_Map->GetAlias() != 0) {
         m_Stats = new CStatsW3MMD(this, m_Map->GetMapStatsW3MMDCategory());
     } else {
-        CONSOLE_Print(m_OHBot->m_Language->NoMapAliasRecordFound());
+        Log->Warning(m_OHBot->m_Language->NoMapAliasRecordFound());
     }
 
     if (m_OHBot->m_VoteMode && !m_Map->GetPossibleModesToVote().empty())
@@ -169,7 +169,7 @@ CGame::~CGame() {
 
     if (m_CallableGameAdd && m_CallableGameAdd->GetReady()) {
         if (m_CallableGameAdd->GetResult() > 0) {
-            CONSOLE_Print("[GAME: " + m_GameName + "] saving player/stats data to database");
+            Log->Info("[GAME: " + m_GameName + "] saving player/stats data to database");
 
             // store the CDBGamePlayers in the database
 
@@ -186,7 +186,7 @@ CGame::~CGame() {
             }
         }
         else
-            CONSOLE_Print("[GAME: " + m_GameName + "] unable to save player/stats data to database");
+            Log->Write("[GAME: " + m_GameName + "] unable to save player/stats data to database");
 
         m_OHBot->m_DB->RecoverCallable(m_CallableGameAdd);
         delete m_CallableGameAdd;
@@ -241,8 +241,7 @@ CGame::~CGame() {
     // so this will create a game entry in the database without any gameplayers and/or DotA stats
 
     if (m_CallableGameAdd) {
-        CONSOLE_Print("[GAME: " + m_GameName +
-                      "] game is being deleted before all game data was saved, game data has been lost");
+        Log->Write("[GAME: " + m_GameName + "] game is being deleted before all game data was saved, game data has been lost");
         boost::mutex::scoped_lock lock(m_OHBot->m_CallablesMutex);
         m_OHBot->m_Callables.push_back(m_CallableGameAdd);
         lock.unlock();
@@ -511,7 +510,7 @@ bool CGame::Update(void *fd, void *send_fd) {
                                                                                 m_OHBot->GetAliasName(
                                                                                         i->second->GetAlias()),
                                                                                 StatsPlayerSummary->GetRank()));
-                            CONSOLE_Print(m_OHBot->m_Language->RanksNotLoaded());
+                            Log->Write(m_OHBot->m_Language->RanksNotLoaded());
                         }
                     }
                     else {
@@ -541,7 +540,7 @@ bool CGame::Update(void *fd, void *send_fd) {
                                          m_OHBot->m_Language->RankOfUserWithoutLevel(StatsPlayerSummary->GetPlayer(),
                                                                                      Time, m_OHBot->GetAliasName(
                                                          i->second->GetAlias()), StatsPlayerSummary->GetRank()));
-                                CONSOLE_Print(m_OHBot->m_Language->RanksNotLoaded());
+                                Log->Write(m_OHBot->m_Language->RanksNotLoaded());
                             }
                         }
                     }
@@ -575,7 +574,7 @@ bool CGame::Update(void *fd, void *send_fd) {
                                          m_OHBot->m_Language->RankOfUserWithoutLevel(StatsPlayerSummary->GetPlayer(),
                                                                                      Time, m_OHBot->GetAliasName(
                                                          i->second->GetAlias()), StatsPlayerSummary->GetRank()));
-                                CONSOLE_Print(m_OHBot->m_Language->RanksNotLoaded());
+                                Log->Write(m_OHBot->m_Language->RanksNotLoaded());
                             }
                         }
                     }
@@ -1141,7 +1140,7 @@ bool CGame::EventPlayerAction(CGamePlayer *player, CIncomingAction *action) {
     // give the stats class a chance to process the action
 
     if (success && m_Stats && m_Stats->ProcessAction(action) && m_GameOverTime == 0) {
-        CONSOLE_Print("[GAME: " + m_GameName + "] gameover timer started");
+        Log->Info("[GAME: " + m_GameName + "] gameover timer started");
         SendEndMessage();
         m_GameOverTime = GetTime();
     }
@@ -1166,13 +1165,13 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
     }
     else if (!force) {
         LevelName = m_OHBot->m_Language->Unknown();
-        CONSOLE_Print("Could not add correctly a levelname. ranks.txt was not loaded.");
+        Log->Write("Could not add correctly a levelname. ranks.txt was not loaded.");
     }
 
     bool hasAccess = m_OHBot->CanAccessCommand(User, Command);
 
     if (spoofed && m_OHBot->m_RanksLoaded && (Level >= 5 || hasAccess)) {
-        CONSOLE_Print("[GAME: " + m_GameName + "] " + LevelName + " [" + User + "] sent command [" + Command +
+        Log->Chat("[GAME: " + m_GameName + "] " + LevelName + " [" + User + "] sent command [" + Command +
                       "] with payload [" + Payload + "]");
 
         if ((m_Locked && Level > 8) || !m_Locked) {
@@ -1589,14 +1588,14 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 SS >> Victim;
 
                 if (SS.fail() || Victim.empty())
-                    CONSOLE_Print("[PP] bad input #1 to !TEMPBAN command");
+                    Log->Chat("[PP] bad input #1 to !TEMPBAN command");
                 else if (Victim.size() < 3)
                     SendChat(player, m_OHBot->m_Language->InvalidNameTooShort());
                 else {
                     SS >> Amount;
 
                     if (SS.fail() || Amount == 0)
-                        CONSOLE_Print("[PP] bad input #2 to !TEMPBAN command");
+                        Log->Chat("[PP] bad input #2 to !TEMPBAN command");
                     else if ((Amount > 3 && (hasAccess || Level < 8)) || Amount > 10 && Level <= 10)
                         SendChat(player, m_OHBot->m_Language->TooMuchPPoints());
                     else {
@@ -1641,16 +1640,16 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 SS >> suser;
 
                 if (SS.fail() || suser.empty())
-                    CONSOLE_Print("Bad input #1(username) for give command.");
+                    Log->Chat("Bad input #1(username) for give command.");
                 else {
                     SS >> TheThingAmount;
                     if (SS.fail() || TheThingAmount == 0)
-                        CONSOLE_Print("Bad input #2(amount) for give command.");
+                        Log->Chat("Bad input #2(amount) for give command.");
                     else {
                         SS >> TheThingType;
 
                         if (SS.fail())
-                            CONSOLE_Print("Bad input #3(thingtype) for give command.");
+                            Log->Chat("Bad input #3(thingtype) for give command.");
                         else {
                             if (!SS.eof()) {
                                 getline(SS, TheThing);
@@ -1879,19 +1878,19 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 SS >> Victim;
 
                 if (SS.fail() || Victim.empty())
-                    CONSOLE_Print("[TEMPBAN] bad input #1 to !TEMPBAN command");
+                    Log->Chat("[TEMPBAN] bad input #1 to !TEMPBAN command");
                 else if (Victim.size() < 3)
                     SendChat(player, m_OHBot->m_Language->InvalidNameTooShort());
                 else {
                     SS >> Amount;
 
                     if (SS.fail() || Amount == 0)
-                        CONSOLE_Print("[TEMPBAN] bad input #2 to !TEMPBAN command");
+                        Log->Chat("[TEMPBAN] bad input #2 to !TEMPBAN command");
                     else {
                         SS >> Suffix;
 
                         if (SS.fail() || Suffix.empty())
-                            CONSOLE_Print("[TEMPBAN] bad input #3 to autohost command");
+                            Log->Chat("[TEMPBAN] bad input #3 to autohost command");
                         else {
                             uint32_t BanTime = 0;
 
@@ -2014,10 +2013,10 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                     SS >> Interval;
 
                     if (SS.fail() || Interval == 0)
-                        CONSOLE_Print("[GAME: " + m_GameName + "] bad input #1 to announce command");
+                        Log->Chat("[GAME: " + m_GameName + "] bad input #1 to announce command");
                     else {
                         if (SS.eof())
-                            CONSOLE_Print("[GAME: " + m_GameName + "] missing input #2 to announce command");
+                            Log->Chat("[GAME: " + m_GameName + "] missing input #2 to announce command");
                         else {
                             getline(SS, Message);
                             string::size_type Start = Message.find_first_not_of(" ");
@@ -2178,7 +2177,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                     SS >> SID;
 
                     if (SS.fail()) {
-                        CONSOLE_Print("[GAME: " + m_GameName + "] bad input to close command");
+                        Log->Chat("[GAME: " + m_GameName + "] bad input to close command");
                         break;
                     }
                     else
@@ -2209,13 +2208,13 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 SS >> Slot;
 
                 if (SS.fail())
-                    CONSOLE_Print("[GAME: " + m_GameName + "] bad input #1 to comp command");
+                    Log->Chat("[GAME: " + m_GameName + "] bad input #1 to comp command");
                 else {
                     if (!SS.eof())
                         SS >> Skill;
 
                     if (SS.fail())
-                        CONSOLE_Print("[GAME: " + m_GameName + "] bad input #2 to comp command");
+                        Log->Chat("[GAME: " + m_GameName + "] bad input #2 to comp command");
                     else
                         ComputerSlot((unsigned char) (Slot - 1), (unsigned char) Skill, true);
                 }
@@ -2237,15 +2236,15 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 SS >> Slot;
 
                 if (SS.fail())
-                    CONSOLE_Print("[GAME: " + m_GameName + "] bad input #1 to compcolour command");
+                    Log->Chat("[GAME: " + m_GameName + "] bad input #1 to compcolour command");
                 else {
                     if (SS.eof())
-                        CONSOLE_Print("[GAME: " + m_GameName + "] missing input #2 to compcolour command");
+                        Log->Chat("[GAME: " + m_GameName + "] missing input #2 to compcolour command");
                     else {
                         SS >> Colour;
 
                         if (SS.fail())
-                            CONSOLE_Print("[GAME: " + m_GameName + "] bad input #2 to compcolour command");
+                            Log->Chat("[GAME: " + m_GameName + "] bad input #2 to compcolour command");
                         else {
                             unsigned char SID = (unsigned char) (Slot - 1);
 
@@ -2276,15 +2275,15 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 SS >> Slot;
 
                 if (SS.fail())
-                    CONSOLE_Print("[GAME: " + m_GameName + "] bad input #1 to comphandicap command");
+                    Log->Chat("[GAME: " + m_GameName + "] bad input #1 to comphandicap command");
                 else {
                     if (SS.eof())
-                        CONSOLE_Print("[GAME: " + m_GameName + "] missing input #2 to comphandicap command");
+                        Log->Chat("[GAME: " + m_GameName + "] missing input #2 to comphandicap command");
                     else {
                         SS >> Handicap;
 
                         if (SS.fail())
-                            CONSOLE_Print("[GAME: " + m_GameName + "] bad input #2 to comphandicap command");
+                            Log->Chat("[GAME: " + m_GameName + "] bad input #2 to comphandicap command");
                         else {
                             unsigned char SID = (unsigned char) (Slot - 1);
 
@@ -2318,10 +2317,10 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 SS >> Slot;
 
                 if (SS.fail())
-                    CONSOLE_Print("[GAME: " + m_GameName + "] bad input #1 to comprace command");
+                    Log->Chat("[GAME: " + m_GameName + "] bad input #1 to comprace command");
                 else {
                     if (SS.eof())
-                        CONSOLE_Print("[GAME: " + m_GameName + "] missing input #2 to comprace command");
+                        Log->Chat("[GAME: " + m_GameName + "] missing input #2 to comprace command");
                     else {
                         getline(SS, Race);
                         string::size_type Start = Race.find_first_not_of(" ");
@@ -2357,7 +2356,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                                     SendAllSlotInfo();
                                 }
                                 else
-                                    CONSOLE_Print("[GAME: " + m_GameName + "] unknown race [" + Race +
+                                    Log->Chat("[GAME: " + m_GameName + "] unknown race [" + Race +
                                                   "] sent to comprace command");
                             }
                         }
@@ -2381,15 +2380,15 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 SS >> Slot;
 
                 if (SS.fail())
-                    CONSOLE_Print("[GAME: " + m_GameName + "] bad input #1 to compteam command");
+                    Log->Chat("[GAME: " + m_GameName + "] bad input #1 to compteam command");
                 else {
                     if (SS.eof())
-                        CONSOLE_Print("[GAME: " + m_GameName + "] missing input #2 to compteam command");
+                        Log->Chat("[GAME: " + m_GameName + "] missing input #2 to compteam command");
                     else {
                         SS >> Team;
 
                         if (SS.fail())
-                            CONSOLE_Print("[GAME: " + m_GameName + "] bad input #2 to compteam command");
+                            Log->Chat("[GAME: " + m_GameName + "] bad input #2 to compteam command");
                         else {
                             unsigned char SID = (unsigned char) (Slot - 1);
 
@@ -2432,7 +2431,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                         if (SID < m_Slots.size() && m_Slots[SID].GetDownloadStatus() != 100) {
                             // inform the client that we are willing to send the map
 
-                            CONSOLE_Print("[GAME: " + m_GameName + "] map download started for player [" +
+                            Log->Chat("[GAME: " + m_GameName + "] map download started for player [" +
                                           LastMatch->GetName() + "]");
                             Send(LastMatch, m_Protocol->SEND_W3GS_STARTDOWNLOAD(GetHostPID()));
                             LastMatch->SetDownloadAllowed(true);
@@ -2457,7 +2456,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 //
 
             else if (Command == "end" && m_GameLoaded && Level >= 8) {
-                CONSOLE_Print("[GAME: " + m_GameName + "] is over (admin ended game)");
+                Log->Info("[GAME: " + m_GameName + "] is over (admin ended game)");
                 StopPlayers("was disconnected (admin ended game)");
             }
 
@@ -2537,7 +2536,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                     SS >> HoldName;
 
                     if (SS.fail()) {
-                        CONSOLE_Print("[GAME: " + m_GameName + "] bad input to hold command");
+                        Log->Chat("[GAME: " + m_GameName + "] bad input to hold command");
                         break;
                     }
                     else {
@@ -2750,7 +2749,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                     SS >> SID;
 
                     if (SS.fail()) {
-                        CONSOLE_Print("[GAME: " + m_GameName + "] bad input to open command");
+                        Log->Chat("[GAME: " + m_GameName + "] bad input to open command");
                         break;
                     }
                     else {
@@ -2854,7 +2853,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
 
             else if (Command == "priv" && !Payload.empty() && !m_CountDownStarted && !m_SaveGame && Level >= 8) {
                 if (Payload.length() < 31) {
-                    CONSOLE_Print("[GAME: " + m_GameName + "] trying to rehost as private game [" + Payload + "]");
+                    Log->Info("[GAME: " + m_GameName + "] trying to rehost as private game [" + Payload + "]");
                     SendAllChat(m_OHBot->m_Language->TryingToRehostAsPrivateGame(Payload));
                     m_GameState = GAME_PRIVATE;
                     m_LastGameName = m_GameName;
@@ -2892,7 +2891,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
 
             else if (Command == "pub" && !Payload.empty() && !m_CountDownStarted && !m_SaveGame && Level >= 8) {
                 if (Payload.length() < 31) {
-                    CONSOLE_Print("[GAME: " + m_GameName + "] trying to rehost as public game [" + Payload + "]");
+                    Log->Info("[GAME: " + m_GameName + "] trying to rehost as public game [" + Payload + "]");
                     SendAllChat(m_OHBot->m_Language->TryingToRehostAsPublicGame(Payload));
                     m_GameState = GAME_PUBLIC;
                     m_LastGameName = m_GameName;
@@ -2962,7 +2961,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                     SS >> Port;
 
                 if (SS.fail())
-                    CONSOLE_Print("[GAME: " + m_GameName + "] bad inputs to sendlan command");
+                    Log->Chat("[GAME: " + m_GameName + "] bad inputs to sendlan command");
                 else {
                     // construct a fixed host counter which will be used to identify players from this "realm" (i.e. LAN)
                     // the fixed host counter's 4 most significant bits will contain a 4 bit ID (0-15)
@@ -3084,15 +3083,15 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 SS >> SID1;
 
                 if (SS.fail())
-                    CONSOLE_Print("[GAME: " + m_GameName + "] bad input #1 to swap command");
+                    Log->Chat("[GAME: " + m_GameName + "] bad input #1 to swap command");
                 else {
                     if (SS.eof())
-                        CONSOLE_Print("[GAME: " + m_GameName + "] missing input #2 to swap command");
+                        Log->Chat("[GAME: " + m_GameName + "] missing input #2 to swap command");
                     else {
                         SS >> SID2;
 
                         if (SS.fail())
-                            CONSOLE_Print("[GAME: " + m_GameName + "] bad input #2 to swap command");
+                            Log->Chat("[GAME: " + m_GameName + "] bad input #2 to swap command");
                         else {
                             SwapSlots((unsigned char) (SID1 - 1), (unsigned char) (SID2 - 1));
                             m_Balanced = false;
@@ -3241,18 +3240,18 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
             }
         }
         else {
-            CONSOLE_Print("[GAME: " + m_GameName + "] admin command ignored, the game is locked");
+            Log->Chat("[GAME: " + m_GameName + "] admin command ignored, the game is locked");
             SendChat(player, m_OHBot->m_Language->TheGameIsLocked());
         }
     }
     else if (!m_OHBot->m_RanksLoaded)
-        CONSOLE_Print(m_OHBot->m_Language->RanksNotLoaded());
+        Log->Write(m_OHBot->m_Language->RanksNotLoaded());
     else {
         if (!spoofed)
-            CONSOLE_Print("[GAME: " + m_GameName + "] non-spoofchecked user [" + User + "] sent command [" + Command +
+            Log->Chat("[GAME: " + m_GameName + "] non-spoofchecked user [" + User + "] sent command [" + Command +
                           "] with payload [" + Payload + "]");
         else
-            CONSOLE_Print("[GAME: " + m_GameName + "] non-admin [" + User + "] sent command [" + Command +
+            Log->Chat("[GAME: " + m_GameName + "] non-admin [" + User + "] sent command [" + Command +
                           "] with payload [" + Payload + "]");
     }
 
@@ -4968,7 +4967,7 @@ bool CGame::IsGameDataSaved() {
 }
 
 void CGame::SaveGameData() {
-    CONSOLE_Print("[GAME: " + m_GameName + "] saving game data to database");
+    Log->Info("[GAME: " + m_GameName + "] saving game data to database");
     m_CallableGameAdd = m_OHBot->m_DB->ThreadedGameAdd(
             m_OHBot->m_BNETs.size() == 1 ? m_OHBot->m_BNETs[0]->GetServer() : string(), m_DBGame->GetMap(), m_GameName,
             m_OwnerName, m_GameTicks / 1000, m_GameState, m_CreatorName, m_CreatorServer, m_GameType, m_LobbyLog,
@@ -5012,7 +5011,7 @@ string CGame::GetRuleTags() {
             Tags += ", " + tag;
         ++saver;
         if (saver > 10) {
-            CONSOLE_Print("There to many rules, stopping after 10.");
+            Log->Warning("There to many rules, stopping after 10.");
             break;
         }
     }
@@ -5031,7 +5030,7 @@ string CGame::GetRule(string tag) {
 
         if (!SS.fail() && (rtag == tag || rtag.find(tag) != string::npos)) {
             if (SS.eof())
-                CONSOLE_Print("[RULE: " + rtag + "] missing input #2 (Rule).");
+                Log->Warning("[RULE: " + rtag + "] missing input #2 (Rule).");
             else {
                 getline(SS, rule);
                 string::size_type Start = rule.find_first_not_of(" ");
@@ -5045,7 +5044,7 @@ string CGame::GetRule(string tag) {
         }
         ++saver;
         if (saver > 10) {
-            CONSOLE_Print("There to many rules, stopping after 10.");
+            Log->Warning("There to many rules, stopping after 10.");
             return m_OHBot->m_Language->WrongContactBotOwner();
             break;
         }
