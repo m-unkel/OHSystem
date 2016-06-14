@@ -330,13 +330,14 @@ COHBot :: COHBot( CConfig *CFG )
         m_DefaultMap = string();
     }
 
-    if( m_DefaultMap.empty() ) {
-        m_Map = NULL;
-        m_AutoHostMap = NULL;
-    }else{
+    //@TODO autohosting check if map is valid ?
+    //if( m_DefaultMap.empty() ) {
+    //    m_Map = NULL;
+    //    m_AutoHostMap = NULL;
+    //}else{
         m_Map = new CMap( this, MapCFG, m_MapCFGPath + m_DefaultMap );
         m_AutoHostMap = new CMap( *m_Map );
-    }
+    //}
     delete MapCFG;
 
     m_SaveGame = new CSaveGame( );
