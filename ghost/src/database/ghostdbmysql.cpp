@@ -22,10 +22,8 @@
 
 #include "../ohbot.h"
 #include "../utils/util.h"
-#include "../config.h"
 #include "ghostdb.h"
 #include "ghostdbmysql.h"
-#include "../ohbot.h"
 #include <signal.h>
 
 #ifdef WIN32

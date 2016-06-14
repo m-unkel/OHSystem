@@ -21,7 +21,7 @@
 * Official GhostPP-Forum: http://ohbotpp.com/
 */
 
-#include "../ohbot.h"
+#include "../includes.h"
 #include "../utils/util.h"
 #include "bnlsprotocol.h"
 

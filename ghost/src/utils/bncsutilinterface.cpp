@@ -20,7 +20,7 @@
 * This is modified from GHOST++: http://ohbotplusplus.googlecode.com/
 */
 
-#include "../ohbot.h"
+#include "../includes.h"
 #include "util.h"
 #include "bncsutilinterface.h"
 

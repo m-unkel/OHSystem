@@ -32,7 +32,6 @@
 #include "../garena/gcbiprotocol.h"
 #include "../gproxy/gpsprotocol.h"
 #include "game_base.h"
-#include "../ohbot.h"
 #include "../database/ghostdb.h"
 
 //

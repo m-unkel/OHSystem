@@ -27,10 +27,8 @@
  *
  */
 
-#include "../includes.h"
 #include "../ohbot.h"
 #include "../utils/util.h"
-#include "../config.h"
 #include "../language.h"
 #include "../network/socket.h"
 #include "../network/commandpacket.h"
@@ -2153,8 +2151,7 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
                                     else
                                         m_OHBot->m_AutoHostGameName = GameName;
                                     m_OHBot->m_AutoHostOwner = User;
-                                    m_OHBot->m_AutoHost
-                                    Server = m_Server;
+                                    m_OHBot->m_AutoHostServer = m_Server;
                                     m_OHBot->m_AutoHostGameType = GameType;
                                     m_OHBot->m_AutoHostMaximumGames = MaximumGames;
                                     m_OHBot->m_AutoHostAutoStartPlayers = AutoStartPlayers;

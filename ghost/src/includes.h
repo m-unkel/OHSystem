@@ -21,6 +21,11 @@
 #ifndef INCLUDES_H
 #define INCLUDES_H
 
+#define IS(a,b) (a&b)!=0
+#define IS_NOT(a,b) (!a&b)!=0
+#define SET(a,b) a|=b
+#define UNSET(a,b) a&=!b
+
 // standard integer sizes for 64 bit compatibility
 
 #ifdef WIN32
@@ -42,13 +47,22 @@
 #include <string>
 #include <vector>
 #include <boost/thread.hpp>
+
+#ifndef WIN32
+//woot woot?
+#include <time.h>
+#endif
+
+#ifdef __APPLE__
+#include <mach/mach_time.h>
+#endif
+
 using namespace std;
 
 typedef vector<unsigned char> BYTEARRAY;
 typedef pair<unsigned char,string> PIDPlayer;
 
 // time
-
 uint32_t GetTime( );		// seconds
 uint32_t GetTicks( );		// milliseconds
 
@@ -63,15 +77,18 @@ uint32_t GetTicks( );		// milliseconds
 #undef FD_SETSIZE
 #define FD_SETSIZE 512
 
+//class COHBot;
+
 // config
-
 #include "config.h"
-CConfig *CFG;
-string sCFGFile;
+extern CConfig *CFG;
+extern string sCFGFile;
 
-// output
-
+// log
 #include "log.h"
-CLog *Log;
+extern CLog *Log;
 
-#endif
+class COHBot;
+extern COHBot *gGHost;
+
+#endif //INCLUDES_H

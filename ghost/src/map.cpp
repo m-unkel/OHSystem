@@ -24,7 +24,6 @@
 #include "utils/util.h"
 #include "utils/crc32.h"
 #include "utils/sha1.h"
-#include "config.h"
 #include "map.h"
 
 #define __STORMLIB_SELF__

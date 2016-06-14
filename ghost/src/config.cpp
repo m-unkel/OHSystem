@@ -20,9 +20,6 @@
 * This is modified from GHOST++: http://ohbotplusplus.googlecode.com/
 */
 
-#include "ohbot.h"
-#include "config.h"
-#include <stdlib.h>
 #include "includes.h"
 
 //

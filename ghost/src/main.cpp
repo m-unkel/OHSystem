@@ -2,8 +2,18 @@
 // Created by ZeMi on 10.06.2016.
 //
 #include "ohbot.h"
+#include "utils/util.h"
+#include <signal.h>
 
-// bot
+#ifndef WIN32
+#include <time.h>
+#include <execinfo.h>
+#endif
+
+// global scope
+CLog *Log = NULL;
+CConfig *CFG = NULL;
+string sCFGFile = string();
 COHBot *gGHost = NULL;
 
 uint32_t GetTime( )
@@ -115,6 +125,7 @@ int main( int argc, char **argv )
          << "***************************************************************************************" << endl
          << endl;
 
+    Log = new CLog();
     CFG = new CConfig();
 
     // read config file
@@ -130,10 +141,10 @@ int main( int argc, char **argv )
     }
 
     string gLogFile = CFG->GetString( "bot_log", "ohbot_" + UTIL_ToString( GetTime( ) ) + ".log" );
-    unsigned char gLogMethod = CFG->GetInt( "bot_logmethod", 1 );
+    int gLogMethod = CFG->GetInt( "bot_logmethod", 54 );
+    Log->Open(gLogFile,gLogMethod);
 
-    Log = new CLog(gLogFile,gLogMethod);
-    Log->Cout("[GHOST] starting up");
+    Log->Write("[GHOST] starting up",LOG_INFO|LOG_FILE|LOG_COUT);
 
     // catch SIGABRT and SIGINT
     // signal( SIGABRT, SignalCatcher );
@@ -177,7 +188,7 @@ int main( int argc, char **argv )
     if( clock_getres( CLOCK_MONOTONIC, &Resolution ) == -1 )
         Log->Write( "[GHOST] error getting monotonic timer resolution" );
     else
-        Log->Write( "[GHOST] using monotonic timer with resolution " + UTIL_ToString( (double)( Resolution.tv_nsec / 1000 ), 2 ) + " microseconds" );
+        Log->Info( "[GHOST] using monotonic timer with resolution " + UTIL_ToString( (double)( Resolution.tv_nsec / 1000 ), 2 ) + " microseconds" );
 #endif
 
 #ifdef WIN32

@@ -22,7 +22,6 @@
 
 #include "../ohbot.h"
 #include "../utils/util.h"
-#include "../config.h"
 #include "../language.h"
 #include "../network/socket.h"
 #include "../database/ghostdb.h"

@@ -34,7 +34,6 @@
 //
 // COHBot
 //
-
 class CUDPSocket;
 class CTCPServer;
 class CTCPSocket;

@@ -28,12 +28,10 @@
  */
 
 #include "ohbot.h"
-#include "log.h"
 #include "network/utils.h"
 #include "utils/util.h"
 #include "utils/crc32.h"
 #include "utils/sha1.h"
-#include "config.h"
 #include "language.h"
 #include "network/socket.h"
 #include "database/ghostdb.h"
@@ -55,23 +53,8 @@
 #include "bnet/bnetprotocol.h"
 #include "utils/bncsutilinterface.h"
 
-#include <signal.h>
-
 #define __STORMLIB_SELF__
 #include <stormlib/StormLib.h>
-
-#include <time.h>
-
-#ifndef WIN32
-//woot woot?
-#include <time.h>
-#include <execinfo.h>
-#endif
-
-#ifdef __APPLE__
-#include <mach/mach_time.h>
-#endif
-
 #include <boost/filesystem.hpp>
 
 using namespace boost :: filesystem;
@@ -322,19 +305,21 @@ COHBot :: COHBot( CConfig *CFG )
     ExtractScripts( );
 
     CConfig *MapCFG = new CConfig();
+    path MapCfgPath;
+
     //DefaultMap: Config Path
     if ( m_DefaultMap.size( ) < 4 || m_DefaultMap.substr( m_DefaultMap.size( ) - 4 ) != ".cfg" ) {
-        path MapCfgPath(m_MapCFGPath + m_DefaultMap + ".cfg");
+        MapCfgPath = path(m_MapCFGPath + m_DefaultMap + ".cfg");
         m_DefaultMap += ".cfg";
         Log->Info( "[GHOST] adding \".cfg\" to default map -> new default is [" + m_DefaultMap + "]" );
     } else
-        path MapCfgPath( m_MapCFGPath + m_DefaultMap );
+        MapCfgPath = path( m_MapCFGPath + m_DefaultMap );
     //DefaultMap: Map Path
     path MapPath( m_MapPath + m_DefaultMap );
 
     // MapCFG-File Found
     if( exists(MapCfgPath) ) {
-        MapCFG->Read( MapCfgPath );
+        MapCFG->Read( MapCfgPath.string() );
     }
     // No MapCFG-File found, but a MapFile.. creating minimal config
     else if( exists(MapPath) ) {

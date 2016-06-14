@@ -19,6 +19,7 @@
 *
 * This is modified from GHOST++: http://ohbotplusplus.googlecode.com/
 */
+
 #include "../ohbot.h"
 #include "../utils/util.h"
 #include "../utils/crc32.h"
