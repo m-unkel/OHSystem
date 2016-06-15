@@ -8,11 +8,11 @@ addons:
     packages:
       - libboost-all-dev
       - build-essential
-      - gcc-4.7
+      - gcc-4.9
       - libmysql++-dev
       - libbz2-dev
       - libgmp3-dev
-      - g++-4.7
+      - g++-4.9
 
 # whitelist
 branches:
