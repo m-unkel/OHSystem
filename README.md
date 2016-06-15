@@ -25,8 +25,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 ###### Status: BE4M.de´s ReWorked OHSystem/GHost++ WC3 Hosting Bot
 [![Build Status](https://travis-ci.org/m-unkel/OHSystem.svg?branch=master)](https://travis-ci.org/m-unkel/OHSystem)
-[![Stories in Ready](https://badge.waffle.io/m-unkel/ohsystem.png?label=ready&title=Ready)](https://waffle.io/m-unkel/ohsystem)
-[![Throughput Graph](https://graphs.waffle.io/m-unkel/ohsystem/throughput.svg)](https://waffle.io/m-unkel/ohsystem/metrics) 
+[![Stories in Ready](https://badge.waffle.io/m-unkel/ohsystem.png?label=issues&title=Issues)](https://waffle.io/m-unkel/ohsystem)
 
 ---
 ### Install Guide
