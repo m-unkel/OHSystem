@@ -19,5 +19,5 @@ script:
  - cd ../../../StormLib/stormlib 
  - make
  - sudo make install 
- - cd ../../
+ - cd ../../../
  - make
