@@ -2,7 +2,7 @@
 ----
 #BE4M.de´s ReWorked OHSystem/GHost++ WC3 Hosting Bot
 
-The reworked version is a minor modification of the official OHSystem source.
+The reworked version is a major modification of the official OHSystem source.
 Mostly tweaks, code maintainance improvements, bug fixes, some new features.
 This is a work in progess, so check back from time to time to see new features.
 After getting the ghost code to an acceptable level, i will start rewriting the OpenStats Website.
@@ -31,7 +31,7 @@ the Free Software Foundation, either version 3 of the License, or
 ---
 ### Install Guide
 
- - [UNIX](https://github.com/m-unkel/ohsystem/wiki/Installation---UNIX)
+ - [UNIX](https://github.com/ohsystem/ohsystem/wiki/Installation---UNIX)
 
 We do not longer provide support for OS X or Windows.
 This Bot is made for servers, not for a personal computer at home.
