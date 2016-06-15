@@ -13,8 +13,7 @@ before_script:
 # Change this to your needs
 script: 
  - sudo apt-get install -qq libboost-all-dev build-essential gcc libmysql++-dev libbz2-dev libgmp3-dev g++-4.8
- - ls
- - cd ./m-unkel/OHSystem/ghost/src/utils/bncsutil/src/bncsutil 
+ - cd ./src/utils/bncsutil/src/bncsutil 
  - make 
  - sudo make install 
  - cd ../../../StormLib/stormlib 
