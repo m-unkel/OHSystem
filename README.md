@@ -1,28 +1,16 @@
-----
-##OpenStats 5.0 is in development
-https://github.com/gamershost/OpenStats-5.0
-
-Join our discussion forum and request ideas, features:
-
-https://devcenter.gamers.host/
 
 ----
-#OpenHosting
+#BE4M.de´s ReWorked OHSystem/GHost++ WC3 Hosting Bot
 
-OpenHosting is a major modification of the official GHost++ source.
-I recently starting remake the bot on a new base. Follow and track the bot here:
-https://github.com/Grief-Code/ohbot_v2
-Official releases will be still made on this repository, however there is still a main support for the current ghost. But it will become from time to time outdated.
+The reworked version is a minor modification of the official OHSystem source.
+Mostly tweaks, code maintainance improvements, bug fixes, some new features.
+This is a work in progess, so check back from time to time to see new features.
+After getting the ghost code to an acceptable level, i will start rewriting the OpenStats Website.
+OHSystem is a major modification of the official GHost++ source.
 
----
-#####Update:
-I have decided to continue working on bot1, i have listed once down how many changes are required for having a normal bot moved to the OHSystem working field, and this is probably takin too much time.
-However, I will create a module system for personal and closed source patches.
-The bot will be still available and will be still maintained for public usages.
-
-There will be also an update to make the installation process for newcomers a lot easier.
 
 ---
+OHSystem
 
 ######We spent a lot of time writing this code, so show some respect:
  - Do not remove this copyright notice anywhere (bot, website etc.)
@@ -35,21 +23,20 @@ the Free Software Foundation, either version 3 of the License, or
 
 ---
 
-###### Status:
-[![Build Status](https://travis-ci.org/OHSystem/OHSystem.svg?branch=master)](https://travis-ci.org/OHSystem/OHSystem)
-[![Build Status](https://drone.io/github.com/OHSystem/ohsystem/status.png)](https://drone.io/github.com/OHSystem/ohsystem/latest)
-[![Project Status](http://stillmaintained.com/OHSystem/ohsystem.png)](http://stillmaintained.com/OHSystem/ohsystem)
-[![Stories in Ready](https://badge.waffle.io/ohsystem/ohsystem.png?label=ready&title=Ready)](https://waffle.io/ohsystem/ohsystem)
-[![Throughput Graph](https://graphs.waffle.io/ohsystem/ohsystem/throughput.svg)](https://waffle.io/ohsystem/ohsystem/metrics) 
-###### Consider a donation to support us and keep up our work, we sometimes need a cup of :coffee:
-[![ScreenShot](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ARP4DEP4E429Y)
+###### Status: BE4M.de´s ReWorked OHSystem/GHost++ WC3 Hosting Bot
+[![Build Status](https://travis-ci.org/m-unkel/OHSystem.svg?branch=master)](https://travis-ci.org/m-unkel/OHSystem)
+[![Build Status](https://drone.io/github.com/m-unkel/ohsystem/status.png)](https://drone.io/github.com/m-unkel/ohsystem/latest)
+[![Project Status](http://stillmaintained.com/m-unkel/ohsystem.png)](http://stillmaintained.com/m-unkel/ohsystem)
+[![Stories in Ready](https://badge.waffle.io/m-unkel/ohsystem.png?label=ready&title=Ready)](https://waffle.io/m-unkel/ohsystem)
+[![Throughput Graph](https://graphs.waffle.io/m-unkel/ohsystem/throughput.svg)](https://waffle.io/m-unkel/ohsystem/metrics) 
 
 ---
-### Install guide for the bot
+### Install Guide
 
- - [UNIX](https://github.com/OHSystem/ohsystem/wiki/Installation---UNIX)
+ - [UNIX](https://github.com/m-unkel/ohsystem/wiki/Installation---UNIX)
 
-We do not longer provide support for OS X or Windows 
+We do not longer provide support for OS X or Windows.
+This Bot is made for servers, not for a personal computer at home.
 
 ---
 
@@ -105,6 +92,3 @@ We do not longer provide support for OS X or Windows
   - and a lot more featurs.
 
 ----
-
-##### The OHSystem was founded by Neubivljiv & Grief-Code.
-We have been working on the development process since over a year now and started the last months to include a full hosting platform which is constantly growing each day.
