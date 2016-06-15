@@ -29,6 +29,9 @@
 #define MODE_GARENA			2
 #define MODE_BNET			4
 #define MODE_GPROXY			8
+#define MODE_EXIT_NICELY	16
+#define MODE_EXIT			32
+#define MODE_ENABLED		128
 
 
 //
@@ -73,9 +76,12 @@ class COHBot
 {
 public:
 
-	uint16_t m_RunMode;
+	// bot settings
+	uint8_t m_RunMode;
+	string m_Version;						// GHost++ version string
+	uint32_t m_BotID;
 
-	// sockets and network protocols
+	// sockets, network protocols and checksums
     CUDPSocket *m_UDPSocket;				// a UDP socket for sending broadcasts and other junk (used with !sendlan)
     CUDPSocket *m_GarenaSocket;
     CTCPServer *m_ReconnectSocket;			// listening socket for GProxy++ reliable reconnects
@@ -95,29 +101,58 @@ public:
 	// database
     COHBotDB *m_DB;							// database
     COHBotDB *m_DBLocal;					// local database (for temporary data)
-
     vector<CBaseCallable *> m_Callables;	// vector of orphaned callables waiting to die
     boost::mutex m_CallablesMutex;
     vector<BYTEARRAY> m_LocalAddresses;		// vector of local IP addresses
+
+	// language and texts
+	string m_LanguagesPath;
+	uint32_t m_FallBackLanguage;
     CLanguage *m_Language;					// language
     vector<translationTree> m_LanguageBundle;
-    string LanCFGPath;
+	string m_MOTDFile;						// config value: motd.txt
+	string m_GameLoadedFile;				// config value: gameloaded.txt
+	string m_GameOverFile;					// config value: gameover.txt
 
+	// config
+    string LanCFGPath;
+	unsigned char m_LANWar3Version;			// config value: LAN warcraft 3 version
+	string m_Warcraft3Path;					// config value: Warcraft 3 path
+	bool m_TFT;								// config value: TFT enabled or not
+
+	// maps
+	string m_DefaultMap;					// config value: default map (map.cfg)
+	string m_MapPath;						// config value: map path
+	string m_MapCFGPath;					// config value: map cfg path
     CMap *m_Map;							// the currently loaded map
     CMap *m_AdminMap;						// the map to use in the admin game
     CMap *m_AutoHostMap;					// the map to use when autohosting
     CSaveGame *m_SaveGame;					// the save game to use
     vector<PIDPlayer> m_EnforcePlayers;		// vector of pids to force players to use in the next game (used with saved games)
-    bool m_Exiting;							// set to true to force ohbot to shutdown next update (used by SignalCatcher)
-    bool m_ExitingNice;						// set to true to force ohbot to disconnect from all battle.net connections and wait for all games to finish before shutting down
-    bool m_Enabled;							// set to false to prevent new games from being created
 
-    string m_Version;						// GHost++ version string
-    uint32_t m_HostCounter;					// the current host counter (a unique number to identify a game, incremented each time a game is created)
+	//  Files, rules, ranks
+	string m_SharedFilesPath;
+	string m_IPBlackListFile;				// config value: IP blacklist file (ipblacklist.txt)
+	vector<string> m_Rules;
+	bool m_RanksLoaded;
+	vector<string> m_Ranks;
+
+	// autohosting config
     string m_AutoHostGameName;				// the base game name to auto host with
     string m_AutoHostOwner;
     string m_AutoHostServer;
     uint32_t m_AutoHostGameType;
+	uint32_t m_AutoHostMaximumGames;		// maximum number of games to auto host
+	uint32_t m_AutoHostAutoStartPlayers;	// when using auto hosting auto start the game when this many players have joined
+	uint32_t m_LastAutoHostTime;			// GetTime when the last auto host was attempted
+	bool m_AutoHostMatchMaking;
+	double m_AutoHostMinimumScore;
+	double m_AutoHostMaximumScore;
+	uint32_t m_AutoRehostTime;
+
+	uint32_t m_HostCounter;					// the current host counter (a unique number to identify a game, incremented each time a game is created)
+	uint32_t m_ReservedHostCounter;
+
     uint32_t m_MinVIPGames;
     uint32_t m_RegVIPGames;
     bool m_OHBalance;
@@ -131,10 +166,6 @@ public:
     uint32_t m_MinPlayerAutoEnd;
     uint32_t m_MaxAllowedSpread;
     bool m_EarlyEnd;
-    uint32_t m_AutoHostMaximumGames;		// maximum number of games to auto host
-    uint32_t m_AutoHostAutoStartPlayers;	// when using auto hosting auto start the game when this many players have joined
-    uint32_t m_LastAutoHostTime;			// GetTime when the last auto host was attempted
-    bool m_AutoHostMatchMaking;
     uint32_t m_LastCommandListTime;			// GetTime when last refreshed command list
     vector<string> m_ColoredNames;
     vector<string> m_Modes;
@@ -160,27 +191,30 @@ public:
     vector<string> m_DeniedNamePartials;
 
 
-    double m_AutoHostMinimumScore;
-    double m_AutoHostMaximumScore;
     bool m_AllGamesFinished;				// if all games finished (used when exiting nicely)
     uint32_t m_AllGamesFinishedTime;		// GetTime when all games finished (used when exiting nicely)
-    string m_Warcraft3Path;					// config value: Warcraft 3 path
-    bool m_TFT;								// config value: TFT enabled or not
+
     string m_BindAddress;					// config value: the address to host games on
     uint16_t m_HostPort;					// config value: the port to host games on
     uint16_t m_ReconnectPort;				// config value: the port to listen for GProxy++ reliable reconnects on
     uint32_t m_ReconnectWaitTime;			// config value: the maximum number of minutes to wait for a GProxy++ reliable reconnect
+
     uint32_t m_MaxGames;					// config value: maximum number of games in progress
     char m_CommandTrigger;					// config value: the command trigger inside games
-    string m_MapCFGPath;					// config value: map cfg path
-    string m_GameLogFilePath;
     string m_ColoredNamePath;
+
+	string m_GameLogFilePath;
     bool m_GameLogging;
     uint32_t m_GameLoggingID;
     string m_SaveGamePath;					// config value: savegame path
-    string m_MapPath;						// config value: map path
+
+	bool m_GameIDReplays;					// config value: save replays with database game id or not
     bool m_SaveReplays;						// config value: save replays
     string m_ReplayPath;					// config value: replay path
+	uint32_t m_ReplayWar3Version;			// config value: replay warcraft 3 version (for saving replays)
+	uint32_t m_ReplayBuildNumber;			// config value: replay build number (for saving replays)
+
+
     string m_VirtualHostName;				// config value: virtual host name
     bool m_HideIPAddresses;					// config value: hide IP addresses from players
     bool m_CheckMultipleIPUsage;			// config value: check for multiple IP address usage
@@ -197,43 +231,36 @@ public:
     bool m_LCPings;							// config value: use LC style pings (divide actual pings by two)
     uint32_t m_AutoKickPing;				// config value: auto kick players with ping higher than this
     uint32_t m_BanMethod;					// config value: ban method (ban by name/ip/both)
-    string m_IPBlackListFile;				// config value: IP blacklist file (ipblacklist.txt)
     uint32_t m_LobbyTimeLimit;				// config value: auto close the game lobby after this many minutes without any reserved players
     uint32_t m_Latency;						// config value: the latency (by default)
     uint32_t m_SyncLimit;					// config value: the maximum number of packets a player can fall out of sync before starting the lag screen (by default)
     bool m_VoteKickAllowed;					// config value: if votekicks are allowed or not
     uint32_t m_VoteKickPercentage;			// config value: percentage of players required to vote yes for a votekick to pass
-    string m_DefaultMap;					// config value: default map (map.cfg)
-    string m_MOTDFile;						// config value: motd.txt
-    string m_GameLoadedFile;				// config value: gameloaded.txt
-    string m_GameOverFile;					// config value: gameover.txt
+
     bool m_LocalAdminMessages;				// config value: send local admin messages or not
     bool m_AdminGameCreate;					// config value: create the admin game or not
     uint16_t m_AdminGamePort;				// config value: the port to host the admin game on
     string m_AdminGamePassword;				// config value: the admin game password
     string m_AdminGameMap;					// config value: the admin game map config to use
-    unsigned char m_LANWar3Version;			// config value: LAN warcraft 3 version
-    uint32_t m_ReplayWar3Version;			// config value: replay warcraft 3 version (for saving replays)
-    uint32_t m_ReplayBuildNumber;			// config value: replay build number (for saving replays)
+
+
     bool m_TCPNoDelay;						// config value: use Nagle's algorithm or not
     uint32_t m_MatchMakingMethod;			// config value: the matchmaking method
     uint32_t m_MapGameType;                 // config value: the MapGameType overwrite (aka: refresh hack)
     uint32_t m_AutoMuteSpammer;				// config value: auto mute spammers?
-    bool m_GameIDReplays;					// config value: save replays with database game id or not
+
     uint32_t m_FinishedGames;
     uint32_t m_CheckForFinishedGames;
     uint32_t m_MinimumLeaverKills;
     uint32_t m_MinimumLeaverDeaths;
     uint32_t m_MinimumLeaverAssists;
     uint32_t m_DeathsByLeaverReduction;
-    uint32_t m_BotID;
+
     bool m_StatsUpdate;
     bool m_MessageSystem;
     bool m_FunCommands;
     bool m_BetSystem;
     bool m_AccountProtection;
-    vector<string> m_Rules;
-    vector<string> m_Ranks;
     bool m_Announce;
     bool m_AnnounceHidden;
     bool m_FountainFarmWarning;
@@ -241,7 +268,6 @@ public:
     bool m_AutoDenyUsers;
     bool m_AllowVoteStart;
     uint32_t m_VoteStartMinPlayers;
-    bool m_RanksLoaded;
     bool m_FlameCheck;
     string m_BotManagerName;
     bool m_IngameVoteKick;
@@ -260,7 +286,6 @@ public:
     bool m_AutobanAll;
     string m_WC3ConnectAlias;
     uint32_t m_LastHCUpdate;
-    uint32_t m_ReservedHostCounter;
     vector<string> m_Insults;
     bool m_ChannelBotOnly;
     vector<string> m_LanRoomName;
@@ -272,19 +297,19 @@ public:
     bool m_HideMessages;
     bool m_DenieCountriesOnThisBot;
     bool m_KickSlowDownloader;
+
     bool m_VirtualLobby;
     uint32_t m_VirtualLobbyTime;
     string m_CustomVirtualLobbyInfoBanText;
+
     bool m_SimpleAFKScript;
     uint32_t m_APMAllowedMinimum;
     uint32_t m_APMMaxAfkWarnings;
     string m_Website;
     uint32_t m_DisconnectAutoBanTime;
-    string m_SharedFilesPath;
     vector<cachedPlayer> m_PlayerCache;
     uint32_t m_BroadCastPort;
-    string m_LanguagesPath;
-    uint32_t m_FallBackLanguage;
+
     bool isCreated;
     uint32_t m_StartTicks;
     uint32_t m_EndTicks;
@@ -299,7 +324,6 @@ public:
     bool m_FountainFarmDetection;
     bool m_AutokickSpoofer;
     bool m_PVPGNMode;
-    uint32_t m_AutoRehostTime;
     uint32_t m_DenyLimit;
     uint32_t m_SwapLimit;
     vector<GProxyReconnector *> m_PendingReconnects;
@@ -332,7 +356,9 @@ public:
 
     // other functions
 
-	bool HasMode( unsigned char mode );
+	bool IsMode( uint8_t gMode );
+	void SetMode( uint8_t gMode, bool bEnable );
+	void SetMode( uint8_t gMode ){ SetMode( gMode, true ); };
 
     void ReloadConfigs( );
     void SetConfigs( CConfig *CFG );
@@ -350,13 +376,15 @@ public:
     string GetRoomName(string RoomID);
     uint32_t GetStatsAliasNumber( string alias );
     string GetLODMode( string fullmode );
-    string GetMonthInWords( string month);
     bool IsForcedGProxy(string input );
     bool FindHackFiles( string input );
     bool PlayerCached( string playername );
     void LoadLanguages( );
     bool CanAccessCommand( string name, string command );
     void HandleRCONCommand( string command );
+private:
+	void SendMessageToBNET( string message, string server, string user, bool whisper);
+
 public:
         static void RegisterPythonClass( );
 };

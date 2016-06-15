@@ -81,10 +81,10 @@ void SignalCatcher2( int s )
 
     if( gGHost )
     {
-        if( gGHost->m_Exiting )
+        if( gGHost->IsMode(MODE_EXIT) )
             exit( 1 );
         else
-            gGHost->m_Exiting = true;
+            gGHost->SetMode(MODE_EXIT);
     }
     else
         exit( 1 );
@@ -98,7 +98,7 @@ void SignalCatcher( int s )
     Log->Info( "[!!!] caught signal " + UTIL_ToString( s ) + ", exiting nicely" );
 
     if( gGHost )
-        gGHost->m_ExitingNice = true;
+        gGHost->SetMode(MODE_EXIT_NICELY);
     else
         exit( 1 );
 }

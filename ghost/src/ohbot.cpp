@@ -65,7 +65,7 @@ using namespace boost :: filesystem;
 
 COHBot :: COHBot( CConfig *CFG )
 {
-    m_RunMode = 0;
+    m_RunMode = MODE_ENABLED;
 
     m_DB = NULL;
     m_Language = NULL;
@@ -76,7 +76,7 @@ COHBot :: COHBot( CConfig *CFG )
     // enable lan mode ?
     if ( CFG->GetInt("lan_mode", 0) ) {
 
-        m_RunMode |= MODE_LAN;
+        SET(m_RunMode,MODE_LAN);
 
         // lan broadcast socket
         m_UDPSocket = new CUDPSocket( );
@@ -90,7 +90,7 @@ COHBot :: COHBot( CConfig *CFG )
     // enable garena mode ?
     if ( CFG->GetInt("garena_mode", 0) ) {
 
-        m_RunMode |= MODE_GARENA;
+        SET(m_RunMode,MODE_GARENA);
 
         // garena socket
         m_GarenaSocket = new CUDPSocket( );
@@ -107,7 +107,7 @@ COHBot :: COHBot( CConfig *CFG )
     // enable gproxy mode ?
     if ( CFG->GetInt("gproxy_mode", 0) ) {
 
-        m_RunMode |= MODE_GPROXY;
+        SET(m_RunMode,MODE_GPROXY);
         m_ReconnectPort = CFG->GetInt( "gproxy_port", 6114 );
 
         // gproxy socket
@@ -155,9 +155,6 @@ COHBot :: COHBot( CConfig *CFG )
     m_Sampler = 0;
 
     isCreated = false;
-    m_Exiting = false;
-    m_ExitingNice = false;
-    m_Enabled = true;
     m_Version = "0.8 (Ghost 17.1, OHSystem 2)";
 
     m_AutoHostMaximumGames = CFG->GetInt( "autohost_maxgames", 0 );
@@ -368,17 +365,17 @@ COHBot :: ~COHBot( )
         delete *i;
 
     // remove lan socket
-    if( m_RunMode & MODE_LAN)
+    if( IS(m_RunMode,MODE_LAN) )
         delete m_UDPSocket;
 
     // remove garena socket and protocol
-    if( m_RunMode & MODE_GARENA) {
+    if( IS(m_RunMode,MODE_GARENA) ) {
         delete m_GarenaSocket;
         delete m_GCBIProtocol;
     }
 
     // remove gproxy socket and protocol
-    if( m_RunMode & MODE_GPROXY) {
+    if( IS(m_RunMode,MODE_GPROXY) ) {
 
         for( vector<CTCPSocket *> :: iterator i = m_ReconnectSockets.begin( ); i != m_ReconnectSockets.end( ); ++i )
             delete *i;
@@ -411,15 +408,21 @@ bool COHBot :: Update( long usecBlock )
     // @TODO: do we really want to shutdown if there's a database error? is there any way to recover from this?
     // @TODO: catch block at uncritical cases ?
 
+    //
+    //  Test for database errors
+    //
     if( m_DB->HasError( ) )
     {
         Log->Write( "[GHOST] database error - " + m_DB->GetError( ) );
-        m_ExitingNice = true;
+        SET( m_RunMode, MODE_EXIT_NICELY);
     }
 
 	boost::mutex::scoped_lock gamesLock( m_GamesMutex );
-	
-	// get rid of any deleted games
+
+
+	//
+    // Delete Games if ready to
+    //
 	for( vector<CBaseGame *> :: iterator i = m_Games.begin( ); i != m_Games.end( ); )
 	{
 		if( (*i)->readyDelete( ) )
@@ -431,6 +434,10 @@ bool COHBot :: Update( long usecBlock )
 		}
 	}
 
+
+    //
+    // Delete CurrentGame if ready to
+    //
 	if( m_CurrentGame && m_CurrentGame->readyDelete( ) )
 	{
 	        for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
@@ -446,9 +453,10 @@ bool COHBot :: Update( long usecBlock )
 	gamesLock.unlock( );
 
 
+    //
     // try to exit nicely if requested to do so
-
-    if( m_ExitingNice )
+    //
+    if( IS(m_RunMode,MODE_EXIT_NICELY) )
     {
         if( !m_BNETs.empty( ) )
         {
@@ -481,22 +489,23 @@ bool COHBot :: Update( long usecBlock )
                 if( m_Callables.empty( ) )
                 {
                     Log->Info( "[GHOST] all threads finished, exiting nicely" );
-                    m_Exiting = true;
+                    SET( m_RunMode, MODE_EXIT );
                 }
                 else if( GetTime( ) - m_AllGamesFinishedTime >= 60 )
                 {
                     Log->Info( "[GHOST] waited 60 seconds for threads to finish, exiting anyway" );
                     Log->Warning( "[GHOST] there are " + UTIL_ToString( m_Callables.size( ) ) + " threads still in progress which will be terminated" );
-                    m_Exiting = true;
+                    SET( m_RunMode, MODE_EXIT );
                 }
             }
         }
     }
 
+
+    //
     // update callables
-
+    //
     boost::mutex::scoped_lock callablesLock( m_CallablesMutex );
-
     for( vector<CBaseCallable *> :: iterator i = m_Callables.begin( ); i != m_Callables.end( ); )
     {
         if( (*i)->GetReady( ) )
@@ -508,13 +517,15 @@ bool COHBot :: Update( long usecBlock )
         else
             ++i;
     }
-
     callablesLock.unlock( );
 
-    // create the GProxy++ reconnect listener
 
-    if( m_RunMode & MODE_GPROXY )
+    //
+    // create and test GProxy++ reconnect listener, if enabled
+    //
+    if( IS(m_RunMode,MODE_GPROXY) )
     {
+        // not created ? then create server
         if( !m_ReconnectSocket )
         {
             m_ReconnectSocket = new CTCPServer( );
@@ -523,18 +534,19 @@ bool COHBot :: Update( long usecBlock )
                 Log->Info( "[GHOST] listening for GProxy++ reconnects on port " + UTIL_ToString( m_ReconnectPort ) );
             else
             {
-                Log->Info( "[GHOST] error listening for GProxy++ reconnects on port " + UTIL_ToString( m_ReconnectPort ) );
+                Log->Write( "[GHOST] listening for GProxy++ reconnects FAILED on port " + UTIL_ToString( m_ReconnectPort ) );
                 delete m_ReconnectSocket;
                 m_ReconnectSocket = NULL;
-                m_RunMode ^= MODE_GPROXY;
+                UNSET(m_RunMode,MODE_GPROXY);
             }
         }
+        // has errors? stop reconnect listener
         else if( m_ReconnectSocket->HasError( ) )
         {
             Log->Write( "[GHOST] GProxy++ reconnect listener error (" + m_ReconnectSocket->GetErrorString( ) + ")" );
             delete m_ReconnectSocket;
             m_ReconnectSocket = NULL;
-            m_RunMode ^= MODE_GPROXY;
+            UNSET(m_RunMode,MODE_GPROXY);
         }
     }
 
@@ -555,7 +567,7 @@ bool COHBot :: Update( long usecBlock )
 
     // 2. the GProxy++ reconnect socket(s)
 
-    if( HasMode( MODE_GPROXY ) ) {
+    if( IS(m_RunMode,MODE_GPROXY) ) {
 
         if (m_ReconnectSocket) {
             m_ReconnectSocket->SetFD(&fd, &send_fd, &nfds);
@@ -622,9 +634,12 @@ bool COHBot :: Update( long usecBlock )
             BNETExit = true;
     }
 
-    // update GProxy++ reliable reconnect sockets
 
-    if ( HasMode( MODE_GPROXY ) ) {
+    //
+    // update GProxy++ reliable reconnect sockets
+    //
+    // @TODO export GProxy++ to new classfile
+    if ( IS(m_RunMode,MODE_GPROXY) ) {
 
         if (m_ReconnectSocket) {
             CTCPSocket *NewSocket = m_ReconnectSocket->Accept(&fd);
@@ -723,16 +738,18 @@ bool COHBot :: Update( long usecBlock )
 
             lock.unlock();
         }
-    } // HasMode ( GPROXY )
+    } // IS(m_RunMode,MODE_GPROXY)
 
-    // autohost
 
+    //
+    // GAME: Autohost
+    //
     if( !m_AutoHostGameName.empty( ) && m_AutoHostMaximumGames != 0 && m_AutoHostAutoStartPlayers != 0 && GetTime( ) - m_LastAutoHostTime >= 30 && m_ReservedHostCounter != 0 )
     {
         // copy all the checks from COHBot :: CreateGame here because we don't want to spam the chat when there's an error
         // instead we fail silently and try again soon
 
-        if( !m_ExitingNice && m_Enabled && !m_CurrentGame && m_Games.size( ) < m_MaxGames && m_Games.size( ) < m_AutoHostMaximumGames )
+        if( IS_NOT(m_RunMode,MODE_EXIT_NICELY) && IS(m_RunMode,MODE_ENABLED) && !m_CurrentGame && m_Games.size( ) < m_MaxGames && m_Games.size( ) < m_AutoHostMaximumGames )
         {
             if( m_AutoHostMap->GetValid( ) )
             {
@@ -793,6 +810,10 @@ bool COHBot :: Update( long usecBlock )
                 m_AutoHostMinimumScore = 0.0;
                 m_AutoHostMaximumScore = 0.0;
             }
+        } else {
+            stringstream ss;
+            ss << "mode:" << (int)m_RunMode << " games:" << m_Games.size( ) << " maxGames:" << m_MaxGames << " maxAutoHostGames." << m_AutoHostMaximumGames;
+            Log->Warning( "[GHOST] autohost error: " + ss.str() );
         }
 
         m_LastAutoHostTime = GetTime( );
@@ -929,7 +950,7 @@ bool COHBot :: Update( long usecBlock )
 
     if( m_CurrentGame ) {
         if( ( GetTime() - m_CurrentGame->m_CreationTime ) >= 259200 ) {
-            m_Exiting = true;
+            SET( m_RunMode, MODE_EXIT );
         }
     }
 
@@ -954,7 +975,7 @@ bool COHBot :: Update( long usecBlock )
         m_Sampler = 0;
     }
 
-    return m_Exiting || AdminExit || BNETExit;
+    return IS(m_RunMode,MODE_EXIT) || AdminExit || BNETExit;
 }
 
 void COHBot :: EventBNETConnecting( CBNET *bnet )
@@ -1047,8 +1068,15 @@ void COHBot :: EventGameDeleted( CBaseGame *game )
     }
 }
 
-bool COHBot :: HasMode( unsigned char mode ) {
-    return (m_RunMode & mode) != 0;
+bool COHBot :: IsMode( uint8_t gMode ) {
+    return IS( m_RunMode, gMode );
+}
+
+void COHBot :: SetMode( uint8_t gMode, bool bEnable ) {
+    if( bEnable )
+        SET( m_RunMode, gMode );
+    else
+        UNSET( m_RunMode, gMode );
 }
 
 void COHBot :: ReloadConfigs( )
@@ -1336,50 +1364,50 @@ void COHBot :: ExtractScripts( )
         Log->Warning( "[GHOST] unable to load MPQ file [" + PatchMPQFileName + "] - error code " + UTIL_ToString( GetLastError( ) ) );
 }
 
+//
+// Host a new Game
+//
 void COHBot :: CreateGame( CMap *map, unsigned char gameState, bool saveGame, string gameName, string ownerName, string creatorName, string creatorServer, uint32_t gameType, bool whisper, uint32_t m_HostCounter )
 {
-    if( !m_Enabled )
+    //
+    //  Error: Bot is disabled
+    //
+    if( IS_NOT( m_RunMode, MODE_ENABLED ) )
     {
-        for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-        {
-            if( (*i)->GetServer( ) == creatorServer )
-                (*i)->QueueChatCommand( m_Language->UnableToCreateGameDisabled( gameName ), creatorName, whisper );
-        }
-
+        SendMessageToBNET(m_Language->UnableToCreateGameDisabled(gameName), creatorServer, creatorName, whisper);
         return;
     }
 
+    //
+    // Error: GameName too long
+    //
     if( gameName.size( ) > 31 )
     {
-        for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-        {
-            if( (*i)->GetServer( ) == creatorServer )
-                (*i)->QueueChatCommand( m_Language->UnableToCreateGameNameTooLong( gameName ), creatorName, whisper );
-        }
-
+        SendMessageToBNET(m_Language->UnableToCreateGameNameTooLong(gameName), creatorServer, creatorName, whisper);
         return;
     }
 
+    //
+    // Error: Map is not valid
+    //
     if( !map->GetValid( ) )
     {
-        for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-        {
-            if( (*i)->GetServer( ) == creatorServer )
-                (*i)->QueueChatCommand( m_Language->UnableToCreateGameInvalidMap( gameName ), creatorName, whisper );
-        }
+        SendMessageToBNET(m_Language->UnableToCreateGameInvalidMap(gameName), creatorServer, creatorName, whisper);
         return;
     }
 
+    //
+    // SaveGame Mode
+    //
     if( saveGame )
     {
+
+        //
+        //  Error: SaveGame enabled, but SaveGane not valid
+        //
         if( !m_SaveGame->GetValid( ) )
         {
-            for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-            {
-                if( (*i)->GetServer( ) == creatorServer )
-                    (*i)->QueueChatCommand( m_Language->UnableToCreateGameInvalidSaveGame( gameName ), creatorName, whisper );
-            }
-
+            SendMessageToBNET(m_Language->UnableToCreateGameInvalidSaveGame(gameName), creatorServer, creatorName, whisper);
             return;
         }
 
@@ -1388,54 +1416,50 @@ void COHBot :: CreateGame( CMap *map, unsigned char gameState, bool saveGame, st
         transform( MapPath1.begin( ), MapPath1.end( ), MapPath1.begin( ), ::tolower );
         transform( MapPath2.begin( ), MapPath2.end( ), MapPath2.begin( ), ::tolower );
 
+        //
+        //  Error: SaveGame-MapPath is not equal to current MapPath
+        //
         if( MapPath1 != MapPath2 )
         {
             Log->Warning( "[GHOST] path mismatch, saved game path is [" + MapPath1 + "] but map path is [" + MapPath2 + "]" );
 
-            for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-            {
-                if( (*i)->GetServer( ) == creatorServer )
-                    (*i)->QueueChatCommand( m_Language->UnableToCreateGameSaveGameMapMismatch( gameName ), creatorName, whisper );
-            }
+            SendMessageToBNET(m_Language->UnableToCreateGameSaveGameMapMismatch(gameName), creatorServer, creatorName, whisper);
             return;
         }
 
+        //
+        // Error: Player not enforced
+        //
         if( m_EnforcePlayers.empty( ) )
         {
-            for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-            {
-                if( (*i)->GetServer( ) == creatorServer )
-                    (*i)->QueueChatCommand( m_Language->UnableToCreateGameMustEnforceFirst( gameName ), creatorName, whisper );
-            }
-
+            SendMessageToBNET(m_Language->UnableToCreateGameMustEnforceFirst( gameName ), creatorServer, creatorName, whisper);
             return;
         }
     }
 
     boost::mutex::scoped_lock lock( m_GamesMutex );
 
+    //
+    // Error: Another Game already created in Lobby
+    //
     if( m_CurrentGame )
     {
-        for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-        {
-            if( (*i)->GetServer( ) == creatorServer )
-                (*i)->QueueChatCommand( m_Language->UnableToCreateGameAnotherGameInLobby( gameName, m_CurrentGame->GetDescription( ) ), creatorName, whisper );
-        }
-
+        SendMessageToBNET(m_Language->UnableToCreateGameAnotherGameInLobby( gameName, m_CurrentGame->GetDescription( ) ), creatorServer, creatorName, whisper);
         return;
     }
 
+    //
+    // Error: MaxGames reached
+    //
     if( m_Games.size( ) >= m_MaxGames )
     {
-        for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-        {
-            if( (*i)->GetServer( ) == creatorServer )
-                (*i)->QueueChatCommand( m_Language->UnableToCreateGameMaxGamesReached( gameName, UTIL_ToString( m_MaxGames ) ), creatorName, whisper );
-        }
-
+        SendMessageToBNET(m_Language->UnableToCreateGameMaxGamesReached( gameName, UTIL_ToString( m_MaxGames ) ), creatorServer, creatorName, whisper);
         return;
     }
 
+    //
+    // Creating a new Game
+    //
     lock.unlock( );
 
     Log->Info( "[GHOST] creating game [" + gameName + "]" );
@@ -1455,6 +1479,9 @@ void COHBot :: CreateGame( CMap *map, unsigned char gameState, bool saveGame, st
         m_EnforcePlayers.clear( );
     }
 
+    //
+    // Inform player or lobby about new created game
+    //
     for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
     {
         if( whisper && (*i)->GetServer( ) == creatorServer )
@@ -1480,30 +1507,21 @@ void COHBot :: CreateGame( CMap *map, unsigned char gameState, bool saveGame, st
             (*i)->QueueGameCreate( gameState, gameName, string( ), map, m_SaveGame, m_CurrentGame->GetHostCounter( ) );
         else
             (*i)->QueueGameCreate( gameState, gameName, string( ), map, NULL, m_CurrentGame->GetHostCounter( ) );
-    }
 
-    // if we're creating a private game we don't need to send any game refresh messages so we can rejoin the chat immediately
-    // unfortunately this doesn't work on PVPGN servers because they consider an enterchat message to be a gameuncreate message when in a game
-    // so don't rejoin the chat if we're using PVPGN
+        // if we're creating a private game we don't need to send any game refresh messages so we can rejoin the chat immediately
+        // unfortunately this doesn't work on PVPGN servers because they consider an enterchat message to be a gameuncreate message when in a game
+        // so don't rejoin the chat if we're using PVPGN
+        if( gameState == GAME_PRIVATE && (*i)->GetPasswordHashType( ) != "pvpgn" )
+            (*i)->QueueEnterChat( );
 
-    if( gameState == GAME_PRIVATE )
-    {
-        for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-        {
-            if( (*i)->GetPasswordHashType( ) != "pvpgn" )
-                (*i)->QueueEnterChat( );
-        }
-    }
-
-    // hold friends and/or clan members
-
-    for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
-    {
+        // hold friends
         if( (*i)->GetHoldFriends( ) )
             (*i)->HoldFriends( m_CurrentGame );
 
+        // hold clan members
         if( (*i)->GetHoldClan( ) )
             (*i)->HoldClan( m_CurrentGame );
+
     }
 
     boost::thread(&CBaseGame::loop, m_CurrentGame);
@@ -1613,7 +1631,7 @@ void COHBot :: LoadRanks( )
         m_RanksLoaded = false;
     }
 
-    if(m_Ranks.size() < 10 && m_RanksLoaded) {
+    if(m_Ranks.size() < 11 && m_RanksLoaded) {
         Log->Warning("[CONFIG] ranks.txt doesn't contain enough levelnames. You require at least 11 rank names (Level 0 - Level 10, with 0).");
         m_RanksLoaded = false;
     } else if(m_RanksLoaded) {
@@ -1639,7 +1657,7 @@ void COHBot :: LoadInsult()
         in.close( );
     }
     else
-        Log->Warning("[GHOST]  unable to read file [insult.txt].");
+        Log->Warning("[GHOST] unable to read file [insult.txt].");
 }
 
 string COHBot :: GetTimeFunction( uint32_t type )
@@ -1658,27 +1676,23 @@ string COHBot :: GetTimeFunction( uint32_t type )
 
 string COHBot :: GetRoomName (string RoomID)
 {
-    string s;
-    bool ok = false;
     int l = RoomID.size();
     int DPos;
     if (m_LanRoomName.size()==0)
-        return s=string();
+        return string();
     else if (l>4)
     {
         for (uint32_t i = 0; i<m_LanRoomName.size(); i++)
         {
             DPos = m_LanRoomName[i].find(RoomID);
             if (DPos!= string ::npos) {
-                return s=m_LanRoomName[i].substr(DPos+l+2);
-                ok = true;
-                break;
+                return m_LanRoomName[i].substr(DPos+l+2);
             }
         }
     }
-    if (!ok)
-        return s=string(); //room matching that RoomID is not found
-    return s;
+
+    //room matching that RoomID is not found
+    return string();
 }
 
 void COHBot :: ReadRoomData()
@@ -1704,8 +1718,11 @@ void COHBot :: ReadRoomData()
     in.close( );
 }
 
+//
+//  Get name from AliasId (1 based)
+//
 string COHBot :: GetAliasName( uint32_t alias ) {
-    if( m_Aliases.size( ) != 0 && m_Aliases.size( ) >= alias && alias != 0 ) {
+    if( alias != 0 && m_Aliases.size( ) != 0 && m_Aliases.size( ) >= alias) {
         return m_Aliases[alias-1];
     }
     return "failed";
@@ -1734,8 +1751,8 @@ uint32_t COHBot :: GetStatsAliasNumber( string alias ) {
 
 /**
  *
- * This function does switch a long mode into a saved shorten mode which is avaible for lod.
- * Modes which contain more than 10 caracters cant be encoded on LoD, so the map owners added shorten modes
+ * This function does switch a long mode into a saved shorten mode which is available for lod.
+ * Modes which contain more than 10 characters cant be encoded on LoD, so the map owners added shorten modes
  * The modes can be found here: http://legendsofdota.com/index.php?/page/index.html
  *
  * @param fullmode
@@ -1779,35 +1796,6 @@ string COHBot :: GetLODMode( string fullmode ) {
         shortenmode = "o2";
 
     return shortenmode;
-}
-
-string COHBot :: GetMonthInWords( string month ) {
-    if(month=="1")
-        return "January";
-    else if(month=="2")
-        return "February";
-    else if(month=="3")
-        return "March";
-    else if(month=="4")
-        return "April";
-    else if(month=="5")
-        return "May";
-    else if(month=="6")
-        return "June";
-    else if(month=="7")
-        return "July";
-    else if(month=="8")
-        return "August";
-    else if(month=="9")
-        return "September";
-    else if(month=="10")
-        return "October";
-    else if(month=="11")
-        return "November";
-    else if(month=="12")
-        return "December";
-    else
-        return "unknown";
 }
 
 bool COHBot :: IsForcedGProxy( string input ) {
@@ -2027,4 +2015,14 @@ void COHBot :: LoadLanguages( ) {
         Log->Write( "[ERROR] error listing language files - caught exception " + *ex.what( ) );
     }
     */
+}
+
+void COHBot ::SendMessageToBNET(string message, string server, string user, bool whisper) {
+    for( vector<CBNET *> :: iterator i = m_BNETs.begin( ); i != m_BNETs.end( ); ++i )
+    {
+        if( (*i)->GetServer( ) == server ) {
+            (*i)->QueueChatCommand(message, user, whisper);
+            return;
+        }
+    }
 }

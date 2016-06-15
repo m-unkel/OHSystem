@@ -380,7 +380,7 @@ bool CGame::Update(void *fd, void *send_fd) {
                                                                                            StatsPlayerSummary->GetWinPerc(),
                                                                                            2),
                                                                                    Streak,
-                                                                                   m_OHBot->GetMonthInWords(Month),
+                                                                                   m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                    Year
                         ));
                     }
@@ -405,7 +405,7 @@ bool CGame::Update(void *fd, void *send_fd) {
                                                                                                     StatsPlayerSummary->GetWinPerc(),
                                                                                                     2),
                                                                                             Streak,
-                                                                                            m_OHBot->GetMonthInWords(
+                                                                                            m_OHBot->m_Language->GetMonthInWords(
                                                                                                     Month),
                                                                                             Year
                             ));
@@ -436,7 +436,7 @@ bool CGame::Update(void *fd, void *send_fd) {
                                                                                                     StatsPlayerSummary->GetWinPerc(),
                                                                                                     2),
                                                                                             Streak,
-                                                                                            m_OHBot->GetMonthInWords(
+                                                                                            m_OHBot->m_Language->GetMonthInWords(
                                                                                                     Month),
                                                                                             Year
                             ));
@@ -448,7 +448,7 @@ bool CGame::Update(void *fd, void *send_fd) {
             else {
                 if (i->first.empty())
                     SendAllChat(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(i->second->GetName(),
-                                                                                      m_OHBot->GetMonthInWords(Month),
+                                                                                      m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                       Year,
                                                                                       m_OHBot->GetAliasName(
                                                                                               i->second->GetAlias())
@@ -458,7 +458,7 @@ bool CGame::Update(void *fd, void *send_fd) {
 
                     if (Player)
                         SendAllChat(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(Player->GetName(),
-                                                                                          m_OHBot->GetMonthInWords(
+                                                                                          m_OHBot->m_Language->GetMonthInWords(
                                                                                                   Month),
                                                                                           Year,
                                                                                           m_OHBot->GetAliasName(
@@ -582,7 +582,7 @@ bool CGame::Update(void *fd, void *send_fd) {
             else {
                 if (i->first.empty())
                     SendAllChat(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(i->second->GetName(),
-                                                                                      m_OHBot->GetMonthInWords(Month),
+                                                                                      m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                       Year,
                                                                                       m_OHBot->GetAliasName(
                                                                                               i->second->GetAlias())
@@ -592,7 +592,7 @@ bool CGame::Update(void *fd, void *send_fd) {
 
                     if (Player)
                         SendAllChat(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(Player->GetName(),
-                                                                                          m_OHBot->GetMonthInWords(
+                                                                                          m_OHBot->m_Language->GetMonthInWords(
                                                                                                   Month),
                                                                                           Year,
                                                                                           m_OHBot->GetAliasName(
@@ -654,7 +654,7 @@ bool CGame::Update(void *fd, void *send_fd) {
             }
             else
                 SendAllChat(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(i->second->GetName(),
-                                                                                  m_OHBot->GetMonthInWords(Month),
+                                                                                  m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                   Year,
                                                                                   m_OHBot->GetAliasName(
                                                                                           i->second->GetAlias())
@@ -756,7 +756,7 @@ bool CGame::Update(void *fd, void *send_fd) {
                 }
                 if (!StatsPlayerSummary->GetHidden()) {
                     if (i->first.empty()) {
-                        SendAllChat("[" + i->second->GetName() + "] " + m_OHBot->GetMonthInWords(Month) + ", " + Year +
+                        SendAllChat("[" + i->second->GetName() + "] " + m_OHBot->m_Language->GetMonthInWords(Month) + ", " + Year +
                                     ", Type: " + m_OHBot->GetAliasName(i->second->GetAlias()));
                         SendAllChat(Summary);
                     }
@@ -765,7 +765,7 @@ bool CGame::Update(void *fd, void *send_fd) {
 
                         if (Player) {
                             SendChat(Player,
-                                     "[" + Player->GetName() + "] " + m_OHBot->GetMonthInWords(Month) + ", " + Year +
+                                     "[" + Player->GetName() + "] " + m_OHBot->m_Language->GetMonthInWords(Month) + ", " + Year +
                                      ", Type: " + m_OHBot->GetAliasName(i->second->GetAlias()));
                             SendChat(Player, Summary);
                         }
@@ -784,7 +784,7 @@ bool CGame::Update(void *fd, void *send_fd) {
             else {
                 if (i->first.empty())
                     SendAllChat(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(i->second->GetName(),
-                                                                                      m_OHBot->GetMonthInWords(Month),
+                                                                                      m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                       Year,
                                                                                       m_OHBot->GetAliasName(
                                                                                               i->second->GetAlias())
@@ -794,7 +794,7 @@ bool CGame::Update(void *fd, void *send_fd) {
 
                     if (Player)
                         SendAllChat(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(Player->GetName(),
-                                                                                          m_OHBot->GetMonthInWords(
+                                                                                          m_OHBot->m_Language->GetMonthInWords(
                                                                                                   Month),
                                                                                           Year,
                                                                                           m_OHBot->GetAliasName(
@@ -2946,7 +2946,7 @@ bool CGame::EventPlayerBotCommand(CGamePlayer *player, string command, string pa
                 // !SENDLAN
                 //
 
-            else if (Command == "sendlan" && !Payload.empty() && !m_CountDownStarted && Level >= 9 && m_OHBot->HasMode(MODE_LAN)) {
+            else if (Command == "sendlan" && !Payload.empty() && !m_CountDownStarted && Level >= 9 && m_OHBot->IsMode(MODE_LAN)) {
                 // extract the ip and the port
                 // e.g. "1.2.3.4 6112" -> ip: "1.2.3.4", port: "6112"
 

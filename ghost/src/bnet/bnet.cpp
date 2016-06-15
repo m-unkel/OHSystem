@@ -573,7 +573,7 @@ bool CBNET::Update(void *fd, void *send_fd) {
                                                                                             StatsPlayerSummary->GetWinPerc(),
                                                                                             2),
                                                                                     Streak,
-                                                                                    m_OHBot->GetMonthInWords(Month),
+                                                                                    m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                     Year
                     ));
                 }
@@ -595,7 +595,7 @@ bool CBNET::Update(void *fd, void *send_fd) {
                                                                                                 StatsPlayerSummary->GetWinPerc(),
                                                                                                 2),
                                                                                         Streak,
-                                                                                        m_OHBot->GetMonthInWords(Month),
+                                                                                        m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                         Year
                         ), i->first, true);
                     }
@@ -603,7 +603,7 @@ bool CBNET::Update(void *fd, void *send_fd) {
             }
             else
                 QueueChatCommand(m_OHBot->m_Language->HasntPlayedGamesWithThisBot(i->second->GetName(),
-                                                                                  m_OHBot->GetMonthInWords(Month),
+                                                                                  m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                   Year), i->first, !i->first.empty());
 
             m_OHBot->m_DB->RecoverCallable(i->second);
@@ -664,7 +664,7 @@ bool CBNET::Update(void *fd, void *send_fd) {
             }
             else
                 QueueChatCommand(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(i->second->GetName(),
-                                                                                       m_OHBot->GetMonthInWords(Month),
+                                                                                       m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                        Year,
                                                                                        m_OHBot->GetAliasName(
                                                                                                i->second->GetAlias())),
@@ -720,7 +720,7 @@ bool CBNET::Update(void *fd, void *send_fd) {
             }
             else
                 QueueChatCommand(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(i->second->GetName(),
-                                                                                       m_OHBot->GetMonthInWords(Month),
+                                                                                       m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                        Year,
                                                                                        m_OHBot->GetAliasName(
                                                                                                i->second->GetAlias())),
@@ -817,7 +817,7 @@ bool CBNET::Update(void *fd, void *send_fd) {
                                                                                    UTIL_ToString(
                                                                                            StatsPlayerSummary->GetAvgRax(),
                                                                                            1),
-                                                                                   m_OHBot->GetMonthInWords(Month),
+                                                                                   m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                    Year,
                                                                                    m_OHBot->GetAliasName(
                                                                                            i->second->GetAlias())
@@ -883,7 +883,7 @@ bool CBNET::Update(void *fd, void *send_fd) {
             }
             else
                 QueueChatCommand(m_OHBot->m_Language->HasntPlayedAliasGamesWithThisBot(i->second->GetName(),
-                                                                                       m_OHBot->GetMonthInWords(Month),
+                                                                                       m_OHBot->m_Language->GetMonthInWords(Month),
                                                                                        Year,
                                                                                        m_OHBot->GetAliasName(
                                                                                                i->second->GetAlias())),
@@ -2155,7 +2155,7 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
                                     m_OHBot->m_AutoHostGameType = GameType;
                                     m_OHBot->m_AutoHostMaximumGames = MaximumGames;
                                     m_OHBot->m_AutoHostAutoStartPlayers = AutoStartPlayers;
-                                    m_OHBot->m_LastAutoHostTime = GetTime();
+                                    m_OHBot->m_LastAutoHostTime = GetTime()-30;
                                     m_OHBot->m_AutoHostMatchMaking = false;
                                     m_OHBot->m_AutoHostMinimumScore = 0.0;
                                     m_OHBot->m_AutoHostMaximumScore = 0.0;
@@ -2431,7 +2431,9 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
         else if (Command == "disable") {
             if (IsLevel(User) == 10 || ForceRoot) {
                 QueueChatCommand(m_OHBot->m_Language->BotDisabled(), User, Whisper);
-                m_OHBot->m_Enabled = false;
+                // disable bot
+                m_OHBot->SetMode( MODE_ENABLED, false);
+
             }
             else
                 QueueChatCommand(m_OHBot->m_Language->YouDontHaveAccessToThatCommand(), User, Whisper);
@@ -2465,7 +2467,8 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
         else if (Command == "enable") {
             if (IsLevel(User) == 10 || ForceRoot) {
                 QueueChatCommand(m_OHBot->m_Language->BotEnabled(), User, Whisper);
-                m_OHBot->m_Enabled = true;
+                // disable bot
+                m_OHBot->SetMode( MODE_ENABLED );
             }
             else
                 QueueChatCommand(m_OHBot->m_Language->YouDontHaveAccessToThatCommand(), User, Whisper);
@@ -2521,6 +2524,15 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
                 else
                     QueueChatCommand(m_OHBot->m_Language->UnableToLoadReplayDoesntExist(File), User, Whisper);
             }
+        }
+
+            //
+            // !EXITNICE
+            //
+
+        else if (Command == "exitnice") {
+            QueueChatCommand("Bot exiting...", User, Whisper);
+            m_OHBot->SetMode(MODE_EXIT_NICELY);
         }
 
             //
@@ -2712,21 +2724,46 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
                 // e.g. game name: "BattleShips Pro"
 
                 string GameName;
+                uint32_t AutoStartPlayers;
                 stringstream SS;
                 SS << Payload;
+                SS >> AutoStartPlayers;
 
-                if (SS.eof())
-                    Log->Chat("[BNET: " + m_ServerAlias + "] missing input #1 (GameName) to the pub command");
-                else {
-                    getline(SS, GameName);
-                    string::size_type Start = GameName.find_first_not_of(" ");
+                if (SS.fail() || AutoStartPlayers < 1) {
+                    Log->Chat("[BNET: " + m_ServerAlias + "] bad input #1 to the pub command");
+                    QueueChatCommand("Bad input #2 (minimum playerscount to start). Allowed: > 0", User, true);
+                } else {
+                    if (SS.eof())
+                        Log->Chat("[BNET: " + m_ServerAlias + "] missing input #2 (GameName) to the pub command");
+                    else {
+                        getline(SS, GameName);
+                        string::size_type Start = GameName.find_first_not_of(" ");
 
-                    if (Start != string::npos)
-                        GameName = GameName.substr(Start);
+                        if (Start != string::npos)
+                            GameName = GameName.substr(Start);
 
-                    // QueueChatCommand( m_OHBot->m_Language->AutoHostEnabled( ), User, Whisper );
-                    m_OHBot->CreateGame(m_OHBot->m_Map, GAME_PUBLIC, false, GameName, User, User, m_Server, 1, Whisper,
-                                        1);
+                        QueueChatCommand( m_OHBot->m_Language->AutoHostEnabled( ), User, Whisper );
+                        //m_OHBot->CreateGame(m_OHBot->m_Map, GAME_PUBLIC, false, GameName, User, User, m_Server, 1, Whisper, 1);
+                        delete m_OHBot->m_AutoHostMap;
+
+                        m_OHBot->m_AutoHostMap = new CMap(*m_OHBot->m_Map);
+                        m_OHBot->m_AutoHostGameName = GameName;
+                        m_OHBot->m_AutoHostOwner = User;
+                        m_OHBot->m_AutoHostServer = m_Server;
+                        m_OHBot->m_AutoHostGameType = 1;
+                        m_OHBot->m_AutoHostMaximumGames = 1;
+                        m_OHBot->m_AutoHostAutoStartPlayers = AutoStartPlayers;
+                        m_OHBot->m_LastAutoHostTime = GetTime()-30;
+                        m_OHBot->m_AutoHostMatchMaking = false;
+                        m_OHBot->m_AutoHostMinimumScore = 0.0;
+                        m_OHBot->m_AutoHostMaximumScore = 0.0;
+
+                        cmdSuccess = true;
+                    }
+                }
+
+                if( !cmdSuccess ){
+                    QueueChatCommand("Usage: !pub AutoStartPlayers GameName (e.g. !pub 4 My Hosted Map)", User, true);
                 }
             }
             else
@@ -3377,7 +3414,7 @@ void CBNET::QueueGameRefresh(unsigned char state, string gameName, string hostNa
             MapHeight.push_back(192);
             MapHeight.push_back(7);
 
-            if (m_OHBot->HasMode( MODE_GPROXY ))
+            if (m_OHBot->IsMode( MODE_GPROXY ))
                 m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false), map->GetMapGameFlags(), MapWidth, MapHeight,
                                                                    gameName, hostName, upTime, "Save\\Multiplayer\\" + saveGame->GetFileNameNoPath(),
                                                                    saveGame->GetMagicNumber(), map->GetMapSHA1(), FixedHostCounter));
@@ -3453,7 +3490,7 @@ void CBNET::QueueGameRefresh(unsigned char state, string gameName, string hostNa
 
             //Log->Info("Using now MapGameType: "+UTIL_ToString(MapGameType));
 
-            if (m_OHBot->HasMode( MODE_GPROXY))
+            if (m_OHBot->IsMode( MODE_GPROXY))
                 m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false), map->GetMapGameFlags(), MapWidth, MapHeight,
                                                                    gameName, hostName, upTime, map->GetMapPath(), map->GetMapCRC(), map->GetMapSHA1(), FixedHostCounter));
             else

@@ -47,11 +47,12 @@
 #include <string>
 #include <vector>
 #include <boost/thread.hpp>
+#include <ctime>
 
-#ifndef WIN32
+//#ifndef WIN32
 //woot woot?
-#include <time.h>
-#endif
+//#include <time.h>
+//#endif
 
 #ifdef __APPLE__
 #include <mach/mach_time.h>

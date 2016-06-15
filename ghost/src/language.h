@@ -43,6 +43,7 @@ public:
     CLanguage( string nCFGFile );
     ~CLanguage( );
 
+    string GetMonthInWords( string month );
     string UnableToCreateGameTryAnotherName( string server, string gamename );
     string UserIsAlreadyAnAdmin( string server, string user );
     string AddedUserToAdminDatabase( string server, string user );
