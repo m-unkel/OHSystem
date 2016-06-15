@@ -1,11 +1,11 @@
 SHELL = /bin/sh
 SYSTEM = $(shell uname)
-C++ = g++
+C++ = g++-4.7
 CC = gcc
 DFLAGS = -DGHOST_MYSQL
 OFLAGS = -O3 -g
 LFLAGS = -L. -L./utils/bncsutil/src/bncsutil/ -L./utils/StormLib/stormlib/  -lbncsutil -lpthread -ldl -lz -lgmp -lStorm -lmysqlclient_r -lboost_date_time -lboost_thread -lboost_system -lboost_filesystem
-CFLAGS = -std=c++1x
+CFLAGS = -std=c++11
 
 ifeq ($(SYSTEM),Darwin)
 DFLAGS += -D__APPLE__
