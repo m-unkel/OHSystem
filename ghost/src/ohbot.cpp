@@ -294,6 +294,8 @@ COHBot :: COHBot( CConfig *CFG )
 
     if( m_BNETs.size( ) == 2 ) {
         Log->Warning( "[GHOST] no battle.net connections found in config file. Only the hardcoded" );
+    } else {
+        SET(m_RunMode,MODE_BNET);
     }
 
     // extract common.j and blizzard.j from War3Patch.mpq if we can
@@ -343,6 +345,14 @@ COHBot :: COHBot( CConfig *CFG )
     {
         Log->Warning( "[GHOST] no battle.net connections found and no admin game created" );
     }
+
+    //
+    // Database CLEANUP
+    //
+
+    //reset games in DB for this BotID
+    vector<PlayerOfPlayerList> pList;
+    m_DB->GameUpdate( m_HostCounter, 0, "", 0, "", "", "", "", 0, 0, pList);
 
     Log->Info( "[GHOST] BE4MHost++ Version " + m_Version + " (MySQL)" );
 }
@@ -812,8 +822,10 @@ bool COHBot :: Update( long usecBlock )
             }
         } else {
             stringstream ss;
-            ss << "mode:" << (int)m_RunMode << " games:" << m_Games.size( ) << " maxGames:" << m_MaxGames << " maxAutoHostGames." << m_AutoHostMaximumGames;
-            Log->Warning( "[GHOST] autohost error: " + ss.str() );
+            int a = IS_NOT(m_RunMode,MODE_EXIT_NICELY)?1:0;
+            int b = IS(m_RunMode,MODE_ENABLED)?1:0;
+            ss << "mode:" << a << b << " games:" << m_Games.size( ) << " maxGames:" << m_MaxGames << " maxAutoHostGames:" << m_AutoHostMaximumGames;
+            Log->Debug( "[GHOST] autohost error: " + ss.str() );
         }
 
         m_LastAutoHostTime = GetTime( );

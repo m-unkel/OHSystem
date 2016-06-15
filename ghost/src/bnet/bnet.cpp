@@ -2091,6 +2091,12 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
             if (IsLevel(User) == 10 || ForceRoot) {
                 if (Payload.empty() || Payload == "off") {
                     QueueChatCommand(m_OHBot->m_Language->AutoHostDisabled(), User, Whisper);
+                    // stop current game
+                    if(m_OHBot->m_CurrentGame) {
+                        QueueChatCommand("Closing current game...", User, Whisper);
+                        m_OHBot->m_CurrentGame->EventPlayerBotCommand( NULL, "unhost", string(), true, User);
+                    }
+                    // clear autohost config
                     m_OHBot->m_AutoHostGameName.clear();
                     m_OHBot->m_AutoHostOwner.clear();
                     m_OHBot->m_AutoHostServer.clear();
@@ -2183,6 +2189,12 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
             if (IsLevel(User) == 10 || ForceRoot) {
                 if (Payload.empty() || Payload == "off") {
                     QueueChatCommand(m_OHBot->m_Language->AutoHostDisabled(), User, Whisper);
+                    // stop current game
+                    if(m_OHBot->m_CurrentGame) {
+                        QueueChatCommand("Closing current game...", User, Whisper);
+                        m_OHBot->m_CurrentGame->EventPlayerBotCommand( NULL, "unhost", string(), true, User);
+                    }
+                    // clear autohost config
                     m_OHBot->m_AutoHostGameName.clear();
                     m_OHBot->m_AutoHostOwner.clear();
                     m_OHBot->m_AutoHostServer.clear();
@@ -2531,8 +2543,12 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
             //
 
         else if (Command == "exitnice") {
-            QueueChatCommand("Bot exiting...", User, Whisper);
-            m_OHBot->SetMode(MODE_EXIT_NICELY);
+            if (IsLevel(User) == 10 || ForceRoot) {
+                QueueChatCommand("Bot exiting...", User, Whisper);
+                m_OHBot->SetMode(MODE_EXIT_NICELY);
+            }
+            else
+                QueueChatCommand(m_OHBot->m_Language->YouDontHaveAccessToThatCommand(), User, Whisper);
         }
 
             //
@@ -2742,21 +2758,11 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
                         if (Start != string::npos)
                             GameName = GameName.substr(Start);
 
-                        QueueChatCommand( m_OHBot->m_Language->AutoHostEnabled( ), User, Whisper );
-                        //m_OHBot->CreateGame(m_OHBot->m_Map, GAME_PUBLIC, false, GameName, User, User, m_Server, 1, Whisper, 1);
-                        delete m_OHBot->m_AutoHostMap;
-
-                        m_OHBot->m_AutoHostMap = new CMap(*m_OHBot->m_Map);
+                        //rehost game name
                         m_OHBot->m_AutoHostGameName = GameName;
-                        m_OHBot->m_AutoHostOwner = User;
-                        m_OHBot->m_AutoHostServer = m_Server;
-                        m_OHBot->m_AutoHostGameType = 1;
-                        m_OHBot->m_AutoHostMaximumGames = 1;
-                        m_OHBot->m_AutoHostAutoStartPlayers = AutoStartPlayers;
-                        m_OHBot->m_LastAutoHostTime = GetTime()-30;
-                        m_OHBot->m_AutoHostMatchMaking = false;
-                        m_OHBot->m_AutoHostMinimumScore = 0.0;
-                        m_OHBot->m_AutoHostMaximumScore = 0.0;
+                        //rehost game counter
+                        GameName += " #" + UTIL_ToString( m_OHBot->GetNewHostCounter( ) );
+                        m_OHBot->CreateGame(m_OHBot->m_Map, GAME_PUBLIC, false, GameName, User, User, m_Server, 1, Whisper, 1);
 
                         cmdSuccess = true;
                     }
@@ -2787,22 +2793,51 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
                 // e.g. game name: "BattleShips Pro"
 
                 string GameName;
+                uint32_t AutoStartPlayers;
                 stringstream SS;
                 SS << Payload;
+                SS >> AutoStartPlayers;
 
-                if (SS.eof())
-                    Log->Chat("[BNET: " + m_ServerAlias + "] missing input #1 (GameName) to the pub command");
-                else {
-                    getline(SS, GameName);
-                    string::size_type Start = GameName.find_first_not_of(" ");
+                if (SS.fail() || AutoStartPlayers < 1) {
+                    Log->Chat("[BNET: " + m_ServerAlias + "] bad input #1 to the priv command");
+                    QueueChatCommand("Bad input #2 (minimum playerscount to start). Allowed: > 0", User, true);
+                } else {
+                    if (SS.eof())
+                        Log->Chat("[BNET: " + m_ServerAlias + "] missing input #2 (GameName) to the priv command");
+                    else {
+                        getline(SS, GameName);
+                        string::size_type Start = GameName.find_first_not_of(" ");
 
-                    if (Start != string::npos)
-                        GameName = GameName.substr(Start);
+                        if (Start != string::npos)
+                            GameName = GameName.substr(Start);
 
-                    // QueueChatCommand( m_OHBot->m_Language->AutoHostEnabled( ), User, Whisper );
-                    m_OHBot->CreateGame(m_OHBot->m_Map, GAME_PRIVATE, false, GameName, User, User, m_Server, 1, Whisper,
-                                        1);
+                        m_OHBot->CreateGame(m_OHBot->m_Map, GAME_PRIVATE, false, GameName, User, User, m_Server, 2, Whisper, 1);
+
+                        cmdSuccess = true;
+                    }
                 }
+
+                if( !cmdSuccess ){
+                    QueueChatCommand("Usage: !priv AutoStartPlayers GameName (e.g. !priv 4 My Hosted Map)", User, true);
+                }
+            }
+            else
+                QueueChatCommand(m_OHBot->m_Language->YouDontHaveAccessToThatCommand(), User, Whisper);
+        }
+
+            //
+            // !UNHOST
+            //
+
+        else if (Command == "unhost") {
+            if (IsLevel(User) == 10 || ForceRoot) {
+                // stop current game
+                if(m_OHBot->m_CurrentGame) {
+                    QueueChatCommand("Closing current game...", User, Whisper);
+                    m_OHBot->m_CurrentGame->EventPlayerBotCommand( NULL, "unhost", string(), true, User);
+                }
+                else
+                    QueueChatCommand("No game to close in lobby", User, Whisper);
             }
             else
                 QueueChatCommand(m_OHBot->m_Language->YouDontHaveAccessToThatCommand(), User, Whisper);

@@ -21,10 +21,10 @@
 #ifndef INCLUDES_H
 #define INCLUDES_H
 
-#define IS(a,b) (a&b)!=0
-#define IS_NOT(a,b) (!a&b)!=0
-#define SET(a,b) a|=b
-#define UNSET(a,b) a&=!b
+#define IS(a,b) ((a&b)!=0)
+#define IS_NOT(a,b) ((a&b)==0)
+#define SET(a,b) (a|=b)
+#define UNSET(a,b) (a&=!b)
 
 // standard integer sizes for 64 bit compatibility
 

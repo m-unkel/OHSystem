@@ -1310,7 +1310,7 @@ bool CBaseGame :: Update( void *fd, void *send_fd )
         // delete the old game
         DoGameUpdate(true);
 
-	m_OHBot->m_Callables.push_back( m_OHBot->m_DB->Threadedgs( m_HostCounter, string(), 3, uint32_t(), m_GameAlias ) );
+	    m_OHBot->m_Callables.push_back( m_OHBot->m_DB->Threadedgs( m_HostCounter, string(), 3, uint32_t(), m_GameAlias ) );
 
         // there's a slim chance that this isn't actually an autohosted game since there is no explicit autohost flag
         // however, if autohosting is enabled and this game is public and this game is set to autostart, it's probably autohosted
