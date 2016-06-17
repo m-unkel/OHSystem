@@ -202,6 +202,7 @@ public:
     uint32_t m_MaxGames;					// config value: maximum number of games in progress
     char m_CommandTrigger;					// config value: the command trigger inside games
     string m_ColoredNamePath;
+    bool m_ColoredNameHide;
 
 	string m_GameLogFilePath;
     bool m_GameLogging;
