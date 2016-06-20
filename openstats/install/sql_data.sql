@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `oh_commands_log` (
   `botid` tinyint(2) unsigned DEFAULT NULL,
   `userid` int(10) UNSIGNED DEFAULT NULL,
   `command` varchar(1024) DEFAULT NULL,
-  `executed` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `executed` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `oh_commands_queue` (
   `botid` tinyint(2) unsigned DEFAULT NULL,
   `userid` int(10) UNSIGNED DEFAULT NULL,
   `command` varchar(1024) DEFAULT NULL,
-  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
