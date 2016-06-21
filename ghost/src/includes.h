@@ -1,4 +1,7 @@
-/*
+/**
+ * Copyright [2016] [m-unkel]
+ * Mail: info@unive.de
+ * URL: https://github.com/m-unkel/OHSystem
 
    Copyright [2008] [Trevor Hogan]
 
@@ -24,7 +27,7 @@
 #define IS(a,b) ((a&b)!=0)
 #define IS_NOT(a,b) ((a&b)==0)
 #define SET(a,b) (a|=b)
-#define UNSET(a,b) (a&=!b)
+#define UNSET(a,b) (a&=~b)
 
 // standard integer sizes for 64 bit compatibility
 
@@ -47,12 +50,15 @@
 #include <string>
 #include <vector>
 #include <boost/thread.hpp>
-#include <ctime>
 
-//#ifndef WIN32
-//woot woot?
-//#include <time.h>
-//#endif
+#ifdef WIN32
+#include <ctime>
+#endif
+
+#ifndef WIN32
+//woot woot? ctime and time.h equivalent ?
+#include <time.h>
+#endif
 
 #ifdef __APPLE__
 #include <mach/mach_time.h>
@@ -78,16 +84,20 @@ uint32_t GetTicks( );		// milliseconds
 #undef FD_SETSIZE
 #define FD_SETSIZE 512
 
-//class COHBot;
+
 
 // config
 #include "config.h"
+class CConfig;
 extern CConfig *CFG;
 extern string sCFGFile;
 
 // log
 #include "log.h"
+class CLog;
 extern CLog *Log;
+
+// bot
 
 class COHBot;
 extern COHBot *gGHost;

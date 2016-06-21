@@ -1,21 +1,32 @@
-//
-// Created by ZeMi on 10.06.2016.
-//
+/**
+ * Copyright [2016] [m-unkel]
+ * Mail: info@unive.de
+ * URL: https://github.com/m-unkel/OHSystem
+ *
+ * We spent a lot of time writing this code, so show some respect:
+ * - Do not remove this copyright notice anywhere (bot, website etc.)
+ * - We do not provide support to those who removed copyright notice
+ *
+ * This is free software: You can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This is modified from OHSYSTEM https://github.com/OHSystem
+ * and from GHOST++: http://ohbotplusplus.googlecode.com/
+ *
+ */
+
 
 #include "includes.h"
 
-using namespace std;
 
 //
 // Log constructor
 //
-CLog :: CLog(string sFilePath, uint8_t cMode):
-        filePath(sFilePath),mode(cMode) {
-
-    if( IS_NOT(cMode,LOG_FILE_INVALID) ){
-        Open( sFilePath);
-    }
-
+CLog :: CLog() {
+    filePath = string();
+    mode = LOG_ALL|LOG_FILE_INVALID;
 }
 
 //
@@ -51,6 +62,7 @@ bool CLog :: Open(string sFilePath, uint8_t cMode) {
         // file access granted
         else {
             UNSET(mode,LOG_FILE_INVALID);
+            
             if( IS(mode,LOG_KEEPOPENED) ){
                 // log method LOG_KEEPOPENED: open the log on startup, flush the log for every message, close the log on shutdown
                 // the log file CANNOT be edited/moved/deleted while GHost++ is running
@@ -126,25 +138,23 @@ void CLog :: Write( const string sMessage, uint8_t msgMode )
     // Log File valid ?
     if( IS(msgMode,LOG_FILE) )
     {
-        // write and flush opened logfile
-        if( IS(mode,LOG_KEEPOPENED) && !fileStream.fail( ) ) {
-            fileStream << "[" << GetLocalTimeString() << "] " << sMessage << endl;
-            fileStream.flush( );
-        }
-        // open, write and close logfile
-        else
-        {
+        // if log file not opened, then open it
+        if(IS_NOT(mode,LOG_KEEPOPENED) )
             fileStream.open( filePath.c_str( ), ios :: app );
 
-            if( fileStream.fail( ) ) {
-                SET(mode,LOG_FILE_INVALID);
-                cout << "[ERROR] Can't open/write to log file (" << filePath << ")!";
-            }
-            else
-            {
-                fileStream << "[" << GetLocalTimeString() << "] " << sMessage << endl;
-                fileStream.close( );
-            }
+        if( fileStream.fail( ) ) {
+            SET(mode,LOG_FILE_INVALID);
+            cout << "[ERROR] Can't write to log file (" << filePath << ")!";
         }
+        else
+        {
+            fileStream << "[" << GetLocalTimeString() << "] " << sMessage << endl;
+        }
+
+        if ( IS(mode,LOG_KEEPOPENED) )
+            fileStream.flush( );
+        else
+            fileStream.close( );
+
     }
 }

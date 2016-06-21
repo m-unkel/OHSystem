@@ -1,9 +1,29 @@
-//
-// Created by ZeMi on 10.06.2016.
-//
+/**
+ * Copyright [2016] [m-unkel]
+ * Mail: info@unive.de
+ * URL: https://github.com/m-unkel/OHSystem
+ *
+ * We spent a lot of time writing this code, so show some respect:
+ * - Do not remove this copyright notice anywhere (bot, website etc.)
+ * - We do not provide support to those who removed copyright notice
+ *
+ * This is free software: You can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This is modified from OHSYSTEM https://github.com/OHSystem
+ * and from GHOST++: http://ohbotplusplus.googlecode.com/
+ *
+ */
+
 #include "ohbot.h"
 #include "utils/util.h"
 #include <signal.h>
+
+#ifdef WIN32
+#include <ws2tcpip.h>       // for WSAIoctl
+#endif
 
 #ifndef WIN32
 #include <time.h>

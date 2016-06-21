@@ -27,10 +27,13 @@
 #include <signal.h>
 
 #ifdef WIN32
-#include <winsock.h>
+    #include <winsock.h>
+    // fix for win32 cpp ide
+    #include "mysql/include/mysql/mysql.h"
+#else
+    #include <mysql/mysql.h>
 #endif
 
-#include <mysql/mysql.h>
 #include <boost/thread.hpp>
 
 //
