@@ -1134,9 +1134,9 @@ void COHBot :: SetConfigs( CConfig *CFG )
     m_HideIPAddresses = CFG->GetInt( "bot_hideipaddresses", 0 ) == 0 ? false : true;
     m_CheckMultipleIPUsage = CFG->GetInt( "bot_checkmultipleipusage", 1 ) == 0 ? false : true;
 
-    // names
-    m_ColoredNamePath = UTIL_AddPathSeperator( CFG->GetString( "oh_coloredname", string( ) ) );
-    m_ColoredNameHide = CFG->GetInt("oh_hiddenColoredName", 0 ) == 0 ? false : true;
+    // allow users to colorize their names
+    m_showColoredNames = CFG->GetInt("oh_colorednames", 1 ) == 0 ? false : true;
+
     m_VirtualHostName = CFG->GetString( "bot_virtualhostname", "|cFF4080C0GHost" );
     if( m_VirtualHostName.size( ) > 15 )
     {

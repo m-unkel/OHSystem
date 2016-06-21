@@ -62,7 +62,7 @@ bool CLog :: Open(string sFilePath, uint8_t cMode) {
         // file access granted
         else {
             UNSET(mode,LOG_FILE_INVALID);
-            
+
             if( IS(mode,LOG_KEEPOPENED) ){
                 // log method LOG_KEEPOPENED: open the log on startup, flush the log for every message, close the log on shutdown
                 // the log file CANNOT be edited/moved/deleted while GHost++ is running

@@ -167,7 +167,6 @@ public:
     uint32_t m_MaxAllowedSpread;
     bool m_EarlyEnd;
     uint32_t m_LastCommandListTime;			// GetTime when last refreshed command list
-    vector<string> m_ColoredNames;
     vector<string> m_Modes;
     CCallableFlameList *m_CallableFlameList;
     uint32_t m_LastFlameListUpdate;
@@ -201,8 +200,9 @@ public:
 
     uint32_t m_MaxGames;					// config value: maximum number of games in progress
     char m_CommandTrigger;					// config value: the command trigger inside games
-    string m_ColoredNamePath;
-    bool m_ColoredNameHide;
+
+	vector<string> m_ColoredNames;
+    bool m_showColoredNames;
 
 	string m_GameLogFilePath;
     bool m_GameLogging;

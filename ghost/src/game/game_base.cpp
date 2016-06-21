@@ -6557,18 +6557,19 @@ void CBaseGame :: AnnounceEvent( uint32_t RandomNumber )
 
 string CBaseGame :: GetColoredName( string defaultname )
 {
-    transform( defaultname.begin( ), defaultname.end( ), defaultname.begin( ), ::tolower );
+    // colored names enabled in config ?
+    if( m_OHBot->m_showColoredNames ) {
 
-    for( vector<CBNET *> :: iterator k = m_OHBot->m_BNETs.begin( ); k != m_OHBot->m_BNETs.end( ); ++k )
-    {
-    	if( m_OHBot->m_ColoredNameHide )
-    	{
-			for( vector<permission> :: iterator i = (*k)->m_Permissions.begin( ); i != (*k)->m_Permissions.end( ); ++i )
-	    	{
-	        	if( i->player == defaultname && i->coloredName != "")
-	            		return "|cFF"+i->coloredName;
-	    	}
-		}
+        transform( defaultname.begin( ), defaultname.end( ), defaultname.begin( ), ::tolower );
+
+        for( vector<CBNET *> :: iterator k = m_OHBot->m_BNETs.begin( ); k != m_OHBot->m_BNETs.end( ); ++k )
+        {
+            for( vector<permission> :: iterator i = (*k)->m_Permissions.begin( ); i != (*k)->m_Permissions.end( ); ++i )
+            {
+                if( i->player == defaultname && i->coloredName != "")
+                    return "|cFF"+i->coloredName;
+            }
+        }
     }
 
    return "";
