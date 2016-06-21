@@ -6561,11 +6561,14 @@ string CBaseGame :: GetColoredName( string defaultname )
 
     for( vector<CBNET *> :: iterator k = m_OHBot->m_BNETs.begin( ); k != m_OHBot->m_BNETs.end( ); ++k )
     {
-	for( vector<permission> :: iterator i = (*k)->m_Permissions.begin( ); i != (*k)->m_Permissions.end( ); ++i )
+    	if( m_OHBot->m_ColoredNameHide )
     	{
-        	if( i->player == defaultname && i->coloredName != "")
-            		return "|cFF"+i->coloredName;
-    	}
+			for( vector<permission> :: iterator i = (*k)->m_Permissions.begin( ); i != (*k)->m_Permissions.end( ); ++i )
+	    	{
+	        	if( i->player == defaultname && i->coloredName != "")
+	            		return "|cFF"+i->coloredName;
+	    	}
+		}
     }
 
    return "";
