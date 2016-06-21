@@ -30,7 +30,7 @@ the Free Software Foundation, either version 3 of the License, or
 ---
 ### Install Guide
 
- - [UNIX](https://github.com/ohsystem/ohsystem/wiki/Installation---UNIX)
+ - [UNIX](https://github.com/m-unkel/ohsystem/wiki/Installation---UNIX)
 
 We do not longer provide support for OS X or Windows.
 This Bot is made for servers, not for a personal computer at home.
