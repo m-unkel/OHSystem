@@ -1136,6 +1136,7 @@ void COHBot :: SetConfigs( CConfig *CFG )
 
     // names
     m_ColoredNamePath = UTIL_AddPathSeperator( CFG->GetString( "oh_coloredname", string( ) ) );
+    m_ColoredNameHide = CFG->GetInt("oh_hiddenColoredName", 0 ) == 0 ? false : true;
     m_VirtualHostName = CFG->GetString( "bot_virtualhostname", "|cFF4080C0GHost" );
     if( m_VirtualHostName.size( ) > 15 )
     {
