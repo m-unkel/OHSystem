@@ -1147,47 +1147,47 @@ uint32_t MySQLPassCheck( void *conn, string *error, uint32_t botid, string user,
     transform( pass.begin( ), pass.end( ), pass.begin( ), ::tolower );
     string EscUser = MySQLEscapeString( conn, user );
     string EscPass = MySQLEscapeString( conn, pass );
-    if( st == 0 )
-    {
-        string Query = "SELECT `user_ppwd` FROM oh_users WHERE bnet_username = '" + EscUser + "' AND `user_bnet` = '2';";
-        if( mysql_real_query( (MYSQL *)conn, Query.c_str( ), Query.size( ) ) != 0 )
-        {
-            *error = mysql_error( (MYSQL *)conn );
-            return 0;
-        }
-        else
-        {
-            MYSQL_RES *Result = mysql_store_result( (MYSQL *)conn );
-            if (Result)
-            {
-                vector<string> Row = MySQLFetchRow( Result );
 
-                if( Row.size( ) == 1 ) {
-                    string Pass = Row[0];
-                    if( Pass == EscPass )
+    string Query = "SELECT `user_ppwd` FROM oh_users WHERE bnet_username = '" + EscUser + "' AND `user_bnet` = '2';";
+    if( mysql_real_query( (MYSQL *)conn, Query.c_str( ), Query.size( ) ) != 0 )
+    {
+        *error = mysql_error( (MYSQL *)conn );
+        return 0;
+    }
+    else
+    {
+        MYSQL_RES *Result = mysql_store_result( (MYSQL *)conn );
+        if (Result)
+        {
+            vector<string> Row = MySQLFetchRow( Result );
+
+            if (Row.size() == 1) {
+
+                string Pass = Row[0];
+                if (Pass == EscPass) {
+                    if( st == 0 )
                         return 1;
-                    else
-                        return 2;
-                }
+                    else {
+                        string Query2 = "UPDATE `oh_users` SET `user_ppwd` = '' WHERE bnet_username = '" + EscUser + "' AND `user_bnet` = '2';";
+                        if( mysql_real_query( (MYSQL *)conn, Query2.c_str( ), Query2.size( ) ) != 0 ) {
+                            *error = mysql_error( (MYSQL *)conn );
+                            return 0;
+                        }
+                        else
+                            return 4;
+                    }
+                } // Pass == EscPass
                 else
-                    return 3;
+                    return (st==0)?2 : 4;
 
-                mysql_free_result( Result );
-            }
+            } // Row.size()
+            else
+                return (st==0)? 3 : 4;
+
+            mysql_free_result( Result );
         }
     }
 
-    if( st == 1 )
-    {
-        string Query = "UPDATE `oh_users` SET `user_ppwd` = '' WHERE bnet_username = '" + EscUser + "' AND `user_bnet` = '2';";
-        if( mysql_real_query( (MYSQL *)conn, Query.c_str( ), Query.size( ) ) != 0 )
-        {
-            *error = mysql_error( (MYSQL *)conn );
-            return 0;
-        }
-        else
-            return 4;
-    }
     return 0;
 }
 
