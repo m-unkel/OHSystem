@@ -345,7 +345,7 @@ COHBot :: COHBot( CConfig *CFG )
 
     //reset games in DB for this BotID
     vector<PlayerOfPlayerList> pList;
-    m_DB->GameUpdate( m_HostCounter, 0, "", 0, "", "", "", "", 0, 0, pList);
+    m_DB->GameUpdate( 0, 0, "", 0, "", "", "", "", 0, 0, pList);
 
     Log->Info( "[GHOST] BE4MHost++ Version " + m_Version + " (MySQL)" );
 }

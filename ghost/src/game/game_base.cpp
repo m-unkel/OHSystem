@@ -180,6 +180,7 @@ CBaseGame :: CBaseGame( COHBot *nOHBot, CMap *nMap, CSaveGame *nSaveGame, uint16
 
     if( m_Socket->Listen( string( ), m_HostPort ) ) {
         Log->Info("[GAME: " + m_GameName + "] listening on port " + UTIL_ToString(m_HostPort));
+        DoGameUpdate(true);
         DoGameUpdate(false);
     }
     else
@@ -191,6 +192,7 @@ CBaseGame :: CBaseGame( COHBot *nOHBot, CMap *nMap, CSaveGame *nSaveGame, uint16
 
 CBaseGame :: ~CBaseGame( )
 {
+    DoGameUpdate(true);
     // save replay
     // todotodo: put this in a thread
 
