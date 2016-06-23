@@ -1178,7 +1178,7 @@ uint32_t MySQLPassCheck( void *conn, string *error, uint32_t botid, string user,
                     }
                 } // Pass == EscPass
                 else
-                    return (st==0)?2 : 4;
+                    return (st==0)?2 : 2;
 
             } // Row.size()
             else
