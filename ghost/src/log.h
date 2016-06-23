@@ -20,39 +20,30 @@
 #ifndef LOG_H
 #define LOG_H
 
-#define LOG_FILE_INVALID    1
-
-#define LOG_ERROR           2
-#define LOG_WARNING         4
-#define LOG_DEBUG           8
-#define LOG_INFO            16
-
-#define LOG_KEEPOPENED      32
-#define LOG_COUT            64
-#define LOG_FILE            128
-
-#define LOG_ALL             30
+enum TLogLevel {LOG_ERROR = 1,LOG_WARNING = 2,LOG_INFO = 4, LOG_CHAT = 8,LOG_DEBUG = 16};
+enum TLogState {STATE_LOG_DISABLED,STATE_LOG_DEFAULT,STATE_LOG_KEEP_OPEN};
 
 class CLog {
 private:
-    uint8_t mode;
+    uint8_t logLevel;
+    TLogState state;
     string filePath;
     ofstream fileStream;
 public:
     CLog( );
     ~CLog( );
 
-    bool Open(string sFilePath,uint8_t cMode);
+    bool Open( const string sFilePath, const uint8_t iLogLevel, const bool bKeepOpened);
 
-    void Write( const string sMessage, uint8_t msgMode );
+    void Write( const string sMessage, const TLogLevel iLevel );
 
-    void Debug( BYTEARRAY b );
-    void Debug( string sMessage ){ Write(string("[Debug] ")+sMessage,LOG_DEBUG|LOG_FILE|LOG_COUT);};
-    void Chat ( string sMessage ){ Write(string("[Chat] ")+sMessage,LOG_INFO|LOG_FILE|LOG_COUT);};
-    void Cout ( string sMessage ){ Write(string("[Info] ")+sMessage,LOG_COUT);};
-    void Info( string sMessage ){ Write(string("[Info] ")+sMessage,LOG_INFO|LOG_COUT);};
-    void Warning( string sMessage ){ Write(string("[Warning] ")+sMessage,LOG_WARNING|LOG_FILE|LOG_COUT);};
-    void Write( const string sMessage ){ Write(string("[Error] ")+sMessage,LOG_ERROR|LOG_FILE|LOG_COUT);};
+    void Debug( const BYTEARRAY b );
+    void Debug( const string sMessage ){ Write(string("[Debug] ")+sMessage,LOG_DEBUG);};
+    void Chat ( const string sMessage ){ Write(string("[Chat] ")+sMessage,LOG_CHAT);};
+    void Cout ( const string sMessage );
+    void Info( const string sMessage ){ Write(string("[Info] ")+sMessage,LOG_INFO);};
+    void Warning( const string sMessage ){ Write(string("[Warning] ")+sMessage,LOG_WARNING);};
+    void Write( const string sMessage ){ Write(string("[Error] ")+sMessage,LOG_ERROR);};
 
     string GetLocalTimeString();
 

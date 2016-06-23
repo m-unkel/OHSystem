@@ -101,10 +101,10 @@ void SignalCatcher2( int s )
 
     if( gGHost )
     {
-        if( gGHost->IsMode(MODE_EXIT) )
+        if( gGHost->m_State == STATE_BOT_EXIT )
             exit( 1 );
         else
-            gGHost->SetMode(MODE_EXIT);
+            gGHost->m_State = STATE_BOT_EXIT;
     }
     else
         exit( 1 );
@@ -118,7 +118,7 @@ void SignalCatcher( int s )
     Log->Info( "[!!!] caught signal " + UTIL_ToString( s ) + ", exiting nicely" );
 
     if( gGHost )
-        gGHost->SetMode(MODE_EXIT_NICELY);
+        gGHost->m_State = STATE_BOT_EXIT_NICE;
     else
         exit( 1 );
 }
@@ -160,11 +160,12 @@ int main( int argc, char **argv )
         sCFGFile = string();
     }
 
-    string gLogFile = CFG->GetString( "bot_log", "ohbot_" + UTIL_ToString( GetTime( ) ) + ".log" );
-    int gLogMethod = CFG->GetInt( "bot_logmethod", 54 );
-    Log->Open(gLogFile,gLogMethod);
+    string gLogFile = CFG->GetString( "bot_logfile", "ohbot_" + UTIL_ToString( GetTime( ) ) + ".log" );
+    int iLogLevel = CFG->GetInt( "bot_loglevel", 0 );
+    bool bLogMethod = CFG->GetInt( "bot_logmethod", 1 ) == 2;
+    Log->Open( gLogFile, iLogLevel, bLogMethod );
 
-    Log->Write("[GHOST] starting up",LOG_INFO|LOG_FILE|LOG_COUT);
+    Log->Info("[GHOST] starting up");
 
     // catch SIGABRT and SIGINT
     // signal( SIGABRT, SignalCatcher );

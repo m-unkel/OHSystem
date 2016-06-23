@@ -428,7 +428,7 @@ bool CGamePlayer :: Update( void *fd )
 
     // GProxy++ acks
 
-    if( m_Game->m_OHBot->IsMode( MODE_GPROXY ) && m_GProxy && GetTime( ) - m_LastGProxyAckTime >= 10 )
+    if( m_Game->m_OHBot->IsMode( BOT_MODE_GPROXY ) && m_GProxy && GetTime( ) - m_LastGProxyAckTime >= 10 )
     {
         if( m_Socket )
             m_Socket->PutBytes( m_Game->m_OHBot->m_GPSProtocol->SEND_GPSS_ACK( m_TotalPacketsReceived ) );
@@ -761,7 +761,7 @@ void CGamePlayer :: ProcessPackets( )
 
             if( Packet->GetID( ) == CGPSProtocol :: GPS_INIT )
             {
-                if( m_Game->m_OHBot->IsMode( MODE_GPROXY ) )
+                if( m_Game->m_OHBot->IsMode( BOT_MODE_GPROXY ) )
                 {
                     m_GProxy = true;
                     m_Socket->PutBytes( m_Game->m_OHBot->m_GPSProtocol->SEND_GPSS_INIT( m_Game->m_OHBot->m_ReconnectPort, m_PID, m_GProxyReconnectKey, m_Game->GetGProxyEmptyActions( ) ) );

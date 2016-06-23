@@ -2444,7 +2444,7 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
             if (IsLevel(User) == 10 || ForceRoot) {
                 QueueChatCommand(m_OHBot->m_Language->BotDisabled(), User, Whisper);
                 // disable bot
-                m_OHBot->SetMode( MODE_ENABLED, false);
+                m_OHBot->m_State = STATE_BOT_DISABLED;
 
             }
             else
@@ -2480,7 +2480,7 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
             if (IsLevel(User) == 10 || ForceRoot) {
                 QueueChatCommand(m_OHBot->m_Language->BotEnabled(), User, Whisper);
                 // disable bot
-                m_OHBot->SetMode( MODE_ENABLED );
+                m_OHBot->m_State = STATE_BOT_ENABLED;
             }
             else
                 QueueChatCommand(m_OHBot->m_Language->YouDontHaveAccessToThatCommand(), User, Whisper);
@@ -2545,7 +2545,7 @@ void CBNET::BotCommand(string Message, string User, bool Whisper, bool ForceRoot
         else if (Command == "exitnice") {
             if (IsLevel(User) == 10 || ForceRoot) {
                 QueueChatCommand("Bot exiting...", User, Whisper);
-                m_OHBot->SetMode(MODE_EXIT_NICELY);
+                m_OHBot->m_State = STATE_BOT_EXIT_NICE;
             }
             else
                 QueueChatCommand(m_OHBot->m_Language->YouDontHaveAccessToThatCommand(), User, Whisper);
@@ -3449,7 +3449,7 @@ void CBNET::QueueGameRefresh(unsigned char state, string gameName, string hostNa
             MapHeight.push_back(192);
             MapHeight.push_back(7);
 
-            if (m_OHBot->IsMode( MODE_GPROXY ))
+            if (m_OHBot->IsMode( BOT_MODE_GPROXY ))
                 m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false), map->GetMapGameFlags(), MapWidth, MapHeight,
                                                                    gameName, hostName, upTime, "Save\\Multiplayer\\" + saveGame->GetFileNameNoPath(),
                                                                    saveGame->GetMagicNumber(), map->GetMapSHA1(), FixedHostCounter));
@@ -3525,7 +3525,7 @@ void CBNET::QueueGameRefresh(unsigned char state, string gameName, string hostNa
 
             //Log->Info("Using now MapGameType: "+UTIL_ToString(MapGameType));
 
-            if (m_OHBot->IsMode( MODE_GPROXY))
+            if (m_OHBot->IsMode( BOT_MODE_GPROXY))
                 m_OutPackets.push(m_Protocol->SEND_SID_STARTADVEX3(state, UTIL_CreateByteArray(MapGameType, false), map->GetMapGameFlags(), MapWidth, MapHeight,
                                                                    gameName, hostName, upTime, map->GetMapPath(), map->GetMapCRC(), map->GetMapSHA1(), FixedHostCounter));
             else

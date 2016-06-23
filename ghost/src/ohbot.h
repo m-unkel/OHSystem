@@ -25,14 +25,6 @@
 
 #include "includes.h"
 
-#define MODE_LAN			1
-#define MODE_GARENA			2
-#define MODE_BNET			4
-#define MODE_GPROXY			8
-#define MODE_EXIT_NICELY	16
-#define MODE_EXIT			32
-#define MODE_ENABLED		128
-
 
 //
 // COHBot
@@ -72,12 +64,16 @@ struct GProxyReconnector {
 	uint32_t PostedTime;
 };
 
+enum TBotMode { BOT_MODE_LAN = 1, BOT_MODE_GARENA = 2, BOT_MODE_BNET = 4, BOT_MODE_GPROXY = 8 };
+enum TBotState { STATE_BOT_DISABLED, STATE_BOT_ENABLED, STATE_BOT_EXIT_NICE, STATE_BOT_EXIT };
+
 class COHBot
 {
 public:
 
 	// bot settings
 	uint8_t m_RunMode;
+	TBotState m_State;
 	string m_Version;						// GHost++ version string
 	uint32_t m_BotID;
 

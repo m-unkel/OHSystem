@@ -399,6 +399,8 @@ set(SOURCE_FILES
         includes.h
     language.cpp
     language.h
+    log.cpp
+    log.h
     Makefile
     map.cpp
     map.h
@@ -406,12 +408,12 @@ set(SOURCE_FILES
         utils/next_combination.h
     ohbot.cpp
     ohbot.h
-        utils/packed.cpp
-        utils/packed.h
-    replay.cpp
-    replay.h
-    savegame.cpp
-    savegame.h
+        replay/packed.cpp
+        replay/packed.h
+        replay/replay.cpp
+        replay/replay.h
+        replay/savegame.cpp
+        replay/savegame.h
         utils/sha1.cpp
         utils/sha1.h
         network/socket.cpp

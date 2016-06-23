@@ -58,7 +58,7 @@ using namespace boost :: filesystem;
 
 COHBot :: COHBot( CConfig *CFG )
 {
-    m_RunMode = MODE_ENABLED;
+    m_State = STATE_BOT_ENABLED;
 
     m_DB = NULL;
     m_Language = NULL;
@@ -69,7 +69,7 @@ COHBot :: COHBot( CConfig *CFG )
     // enable lan mode ?
     if ( CFG->GetInt("lan_mode", 0) ) {
 
-        SET(m_RunMode,MODE_LAN);
+        SET(m_RunMode,BOT_MODE_LAN);
 
         // lan broadcast socket
         m_UDPSocket = new CUDPSocket( );
@@ -83,7 +83,7 @@ COHBot :: COHBot( CConfig *CFG )
     // enable garena mode ?
     if ( CFG->GetInt("garena_mode", 0) ) {
 
-        SET(m_RunMode,MODE_GARENA);
+        SET(m_RunMode,BOT_MODE_GARENA);
 
         // garena socket
         m_GarenaSocket = new CUDPSocket( );
@@ -100,7 +100,7 @@ COHBot :: COHBot( CConfig *CFG )
     // enable gproxy mode ?
     if ( CFG->GetInt("gproxy_mode", 0) ) {
 
-        SET(m_RunMode,MODE_GPROXY);
+        SET(m_RunMode,BOT_MODE_GPROXY);
         m_ReconnectPort = CFG->GetInt( "gproxy_port", 6114 );
 
         // gproxy socket
@@ -288,7 +288,7 @@ COHBot :: COHBot( CConfig *CFG )
     if( m_BNETs.size( ) == 2 ) {
         Log->Warning( "[GHOST] no battle.net connections found in config file. Only the hardcoded" );
     } else {
-        SET(m_RunMode,MODE_BNET);
+        SET(m_RunMode,BOT_MODE_BNET);
     }
 
     // extract common.j and blizzard.j from War3Patch.mpq if we can
@@ -368,17 +368,17 @@ COHBot :: ~COHBot( )
         delete *i;
 
     // remove lan socket
-    if( IS(m_RunMode,MODE_LAN) )
+    if( IS(m_RunMode,BOT_MODE_LAN) )
         delete m_UDPSocket;
 
     // remove garena socket and protocol
-    if( IS(m_RunMode,MODE_GARENA) ) {
+    if( IS(m_RunMode,BOT_MODE_GARENA) ) {
         delete m_GarenaSocket;
         delete m_GCBIProtocol;
     }
 
     // remove gproxy socket and protocol
-    if( IS(m_RunMode,MODE_GPROXY) ) {
+    if( IS(m_RunMode,BOT_MODE_GPROXY) ) {
 
         for( vector<CTCPSocket *> :: iterator i = m_ReconnectSockets.begin( ); i != m_ReconnectSockets.end( ); ++i )
             delete *i;
@@ -417,7 +417,7 @@ bool COHBot :: Update( long usecBlock )
     if( m_DB->HasError( ) )
     {
         Log->Write( "[GHOST] database error - " + m_DB->GetError( ) );
-        SET( m_RunMode, MODE_EXIT_NICELY);
+        m_State = STATE_BOT_EXIT_NICE;
     }
 
 	boost::mutex::scoped_lock gamesLock( m_GamesMutex );
@@ -459,7 +459,7 @@ bool COHBot :: Update( long usecBlock )
     //
     // try to exit nicely if requested to do so
     //
-    if( IS(m_RunMode,MODE_EXIT_NICELY) )
+    if( m_State == STATE_BOT_EXIT_NICE )
     {
         if( !m_BNETs.empty( ) )
         {
@@ -492,13 +492,13 @@ bool COHBot :: Update( long usecBlock )
                 if( m_Callables.empty( ) )
                 {
                     Log->Info( "[GHOST] all threads finished, exiting nicely" );
-                    SET( m_RunMode, MODE_EXIT );
+                    m_State = STATE_BOT_EXIT;
                 }
                 else if( GetTime( ) - m_AllGamesFinishedTime >= 60 )
                 {
                     Log->Info( "[GHOST] waited 60 seconds for threads to finish, exiting anyway" );
                     Log->Warning( "[GHOST] there are " + UTIL_ToString( m_Callables.size( ) ) + " threads still in progress which will be terminated" );
-                    SET( m_RunMode, MODE_EXIT );
+                    m_State = STATE_BOT_EXIT;
                 }
             }
         }
@@ -526,7 +526,7 @@ bool COHBot :: Update( long usecBlock )
     //
     // create and test GProxy++ reconnect listener, if enabled
     //
-    if( IS(m_RunMode,MODE_GPROXY) )
+    if( IS(m_RunMode,BOT_MODE_GPROXY) )
     {
         // not created ? then create server
         if( !m_ReconnectSocket )
@@ -540,7 +540,7 @@ bool COHBot :: Update( long usecBlock )
                 Log->Write( "[GHOST] listening for GProxy++ reconnects FAILED on port " + UTIL_ToString( m_ReconnectPort ) );
                 delete m_ReconnectSocket;
                 m_ReconnectSocket = NULL;
-                UNSET(m_RunMode,MODE_GPROXY);
+                UNSET(m_RunMode,BOT_MODE_GPROXY);
             }
         }
         // has errors? stop reconnect listener
@@ -549,7 +549,7 @@ bool COHBot :: Update( long usecBlock )
             Log->Write( "[GHOST] GProxy++ reconnect listener error (" + m_ReconnectSocket->GetErrorString( ) + ")" );
             delete m_ReconnectSocket;
             m_ReconnectSocket = NULL;
-            UNSET(m_RunMode,MODE_GPROXY);
+            UNSET(m_RunMode,BOT_MODE_GPROXY);
         }
     }
 
@@ -570,7 +570,7 @@ bool COHBot :: Update( long usecBlock )
 
     // 2. the GProxy++ reconnect socket(s)
 
-    if( IS(m_RunMode,MODE_GPROXY) ) {
+    if( IS(m_RunMode,BOT_MODE_GPROXY) ) {
 
         if (m_ReconnectSocket) {
             m_ReconnectSocket->SetFD(&fd, &send_fd, &nfds);
@@ -642,7 +642,7 @@ bool COHBot :: Update( long usecBlock )
     // update GProxy++ reliable reconnect sockets
     //
     // @TODO export GProxy++ to new classfile
-    if ( IS(m_RunMode,MODE_GPROXY) ) {
+    if ( IS(m_RunMode,BOT_MODE_GPROXY) ) {
 
         if (m_ReconnectSocket) {
             CTCPSocket *NewSocket = m_ReconnectSocket->Accept(&fd);
@@ -741,7 +741,7 @@ bool COHBot :: Update( long usecBlock )
 
             lock.unlock();
         }
-    } // IS(m_RunMode,MODE_GPROXY)
+    } // IS(m_RunMode,BOT_MODE_GPROXY)
 
 
     //
@@ -752,7 +752,7 @@ bool COHBot :: Update( long usecBlock )
         // copy all the checks from COHBot :: CreateGame here because we don't want to spam the chat when there's an error
         // instead we fail silently and try again soon
 
-        if( IS_NOT(m_RunMode,MODE_EXIT_NICELY) && IS(m_RunMode,MODE_ENABLED) && !m_CurrentGame && m_Games.size( ) < m_MaxGames && m_Games.size( ) < m_AutoHostMaximumGames )
+        if( (m_State == STATE_BOT_ENABLED) && !m_CurrentGame && m_Games.size( ) < m_MaxGames && m_Games.size( ) < m_AutoHostMaximumGames )
         {
             if( m_AutoHostMap->GetValid( ) )
             {
@@ -815,9 +815,7 @@ bool COHBot :: Update( long usecBlock )
             }
         } else {
             stringstream ss;
-            int a = IS_NOT(m_RunMode,MODE_EXIT_NICELY)?1:0;
-            int b = IS(m_RunMode,MODE_ENABLED)?1:0;
-            ss << "mode:" << a << b << " games:" << m_Games.size( ) << " maxGames:" << m_MaxGames << " maxAutoHostGames:" << m_AutoHostMaximumGames;
+            ss << "state:" << (int)m_State << " games:" << m_Games.size( ) << " maxGames:" << m_MaxGames << " maxAutoHostGames:" << m_AutoHostMaximumGames;
             Log->Debug( "[GHOST] autohost error: " + ss.str() );
         }
 
@@ -955,7 +953,7 @@ bool COHBot :: Update( long usecBlock )
 
     if( m_CurrentGame ) {
         if( ( GetTime() - m_CurrentGame->m_CreationTime ) >= 259200 ) {
-            SET( m_RunMode, MODE_EXIT );
+            m_State = STATE_BOT_EXIT;
         }
     }
 
@@ -980,7 +978,7 @@ bool COHBot :: Update( long usecBlock )
         m_Sampler = 0;
     }
 
-    return IS(m_RunMode,MODE_EXIT) || AdminExit || BNETExit;
+    return (m_State == STATE_BOT_EXIT) || AdminExit || BNETExit;
 }
 
 void COHBot :: EventBNETConnecting( CBNET *bnet )
@@ -1378,7 +1376,7 @@ void COHBot :: CreateGame( CMap *map, unsigned char gameState, bool saveGame, st
     //
     //  Error: Bot is disabled
     //
-    if( IS_NOT( m_RunMode, MODE_ENABLED ) )
+    if( m_State != STATE_BOT_ENABLED )
     {
         SendMessageToBNET(m_Language->UnableToCreateGameDisabled(gameName), creatorServer, creatorName, whisper);
         return;
