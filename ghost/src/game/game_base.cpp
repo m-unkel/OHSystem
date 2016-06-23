@@ -178,8 +178,10 @@ CBaseGame :: CBaseGame( COHBot *nOHBot, CMap *nMap, CSaveGame *nSaveGame, uint16
 
     Log->Info( "[GAME: " + m_GameName + "] attempting to bind to all available addresses" );
 
-    if( m_Socket->Listen( string( ), m_HostPort ) )
-        Log->Info( "[GAME: " + m_GameName + "] listening on port " + UTIL_ToString( m_HostPort ) );
+    if( m_Socket->Listen( string( ), m_HostPort ) ) {
+        Log->Info("[GAME: " + m_GameName + "] listening on port " + UTIL_ToString(m_HostPort));
+        DoGameUpdate(false);
+    }
     else
     {
         Log->Write( "[GAME: " + m_GameName + "] error listening on port " + UTIL_ToString( m_HostPort ) );
