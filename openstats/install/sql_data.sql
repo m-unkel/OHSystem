@@ -581,6 +581,7 @@ CREATE TABLE IF NOT EXISTS `oh_stats_players` (
   `country` varchar(50) NOT NULL,
   `country_code` varchar(2) NOT NULL,
   `month` varchar(2) NOT NULL DEFAULT '1',
+  `year` year(4) NOT NULL,
   `points` int(11) unsigned NOT NULL,
   `points_bet` tinyint(6) unsigned NOT NULL,
   `blacklisted` tinyint(1) unsigned NOT NULL,
@@ -589,7 +590,8 @@ CREATE TABLE IF NOT EXISTS `oh_stats_players` (
   PRIMARY KEY (`id`),
   KEY `player` (`player`),
   KEY `country_code` (`country_code`),
-  KEY `month` (`month`)
+  KEY `month` (`month`),
+  KEY `year` (`year`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `oh_users`;
