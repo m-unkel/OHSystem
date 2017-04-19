@@ -756,7 +756,7 @@ bool COHBot :: Update( long usecBlock )
         {
             if( m_AutoHostMap->GetValid( ) )
             {
-                string GameName = m_AutoHostGameName + " #" + UTIL_ToString( GetNewHostCounter( ) );
+                string GameName = m_AutoHostGameName + " №" + UTIL_ToString( GetNewHostCounter( ) );
 
                 if( GameName.size( ) <= 31 )
                 {
